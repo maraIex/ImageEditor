@@ -40,6 +40,42 @@ function uploadImage() {
     });
 }
 
+function clearEditor() {
+    fetch("/clear", {
+        method: "POST"
+    })
+    .then(res => res.json())
+    .then(data => {
+        const preview = document.getElementById("preview");
+
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        // Сброс изображения
+        preview.src = "";
+        preview.style.display = "none";
+
+        // Очистка input file
+        document.getElementById("uploadInput").value = "";
+
+        // Сброс ползунков и полей
+        document.querySelectorAll("input[type=range]").forEach(el => {
+            el.value = el.defaultValue;
+        });
+
+        document.querySelectorAll("input[type=number]").forEach(el => {
+            el.value = "";
+        });
+
+        document.getElementById("saveMessage").textContent = "";
+
+        alert(data.message);
+    });
+}
+
+
 function saveImage() {
     const filename = "current.png";
     const url = `/download/${filename}`;

@@ -301,5 +301,23 @@ def save():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+@app.route("/clear", methods=["POST"])
+def clear():
+    try:
+        img_path = os.path.join(app.config["UPLOAD_FOLDER"], "current.png")
+
+        if os.path.exists(img_path):
+            os.remove(img_path)
+
+        return jsonify({
+            "message": "Редактор очищен"
+        })
+
+    except Exception as e:
+        return jsonify({
+            "error": f"Ошибка очистки: {str(e)}"
+        }), 500
+
+
 if __name__ == "__main__":
     app.run(debug=True)
