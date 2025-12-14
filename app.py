@@ -11,8 +11,11 @@ from image_processing.blur import blur_image
 from image_processing.saver import save_image
 import uuid
 
+"""
+Мои файлы
 from src.routes import canvas_routes, import_export_routes, project_routes, gradient_filter_routes, image_routes, \
     animation_routes
+"""
 
 app = Flask(__name__)
 
@@ -321,13 +324,15 @@ def clear():
             "error": f"Ошибка очистки: {str(e)}"
         }), 500
 
-
+"""
+- Этот код дает модульность. Я закомментировал, чтобы проект запускался. Когда доделаю свою ветку - разкомменчу
 app.register_blueprint(canvas_routes.bp)
 app.register_blueprint(import_export_routes.bp)
 app.register_blueprint(project_routes.bp)
 app.register_blueprint(gradient_filter_routes.bp)
 app.register_blueprint(image_routes.bp)
 app.register_blueprint(animation_routes.bp)
+"""
 
 if __name__ == "__main__":
     app.run(debug=True)
