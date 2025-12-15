@@ -1,8 +1,8 @@
 from flask import Flask, render_template
 import os
 
-from src.routes import canvas_routes, import_export_routes, project_routes, gradient_filter_routes, image_routes, \
-    animation_routes, vector_routes
+from src.routes import canvas_routes, image_routes, \
+    transform_routes, filter_routes
 
 from src.three_d import scene_routes as three_d_routes
 
@@ -46,12 +46,9 @@ def three_d_editor():
 
 
 app.register_blueprint(canvas_routes.bp)
-app.register_blueprint(import_export_routes.bp)
-app.register_blueprint(project_routes.bp)
-app.register_blueprint(gradient_filter_routes.bp)
 app.register_blueprint(image_routes.bp)
-app.register_blueprint(animation_routes.bp)
-app.register_blueprint(vector_routes.bp)
+app.register_blueprint(transform_routes.bp)
+app.register_blueprint(filter_routes.bp)
 app.register_blueprint(three_d_routes.bp)
 
 if __name__ == "__main__":

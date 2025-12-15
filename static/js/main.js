@@ -1,226 +1,194 @@
-function updateImage(data) {
-    if (data.error) {
-        alert(data.error);
-        return;
-    }
-    const preview = document.getElementById("preview");
-    preview.src = data.image_url + "?" + new Date().getTime();
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const image = new Image();
+
+let isDragging = false;       // перемещение картинки
+let isResizing = false;       // растяжение картинки
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+let resizeDir = "";           // направление растяжения
+
+let workspaceSize = 100;      // минимальный размер рабочей области
+
+// ===================== ЗАГРУЗКА И ОТОБРАЖЕНИЕ =====================
+function loadToCanvas(base64) {
+    image.onload = () => {
+        canvas.width = Math.max(image.width, workspaceSize);
+        canvas.height = Math.max(image.height, workspaceSize);
+        drawCanvas();
+        updateCanvasInfo();
+    };
+    image.src = "data:image/png;base64," + base64;
 }
 
-function uploadImage() {
-    const input = document.getElementById("uploadInput");
-    const message = document.getElementById("message");
-    const preview = document.getElementById("preview");
+function reloadImage() {
+    fetch("/current")
+        .then(r => r.json())
+        .then(data => {
+            if (data.image) loadToCanvas(data.image);
+        });
+}
 
-    if (!input.files.length) {
-        message.textContent = "Выберите файл";
+// ===================== ОТРИСОВКА =====================
+function drawCanvas() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (!image.src) return;
+
+    const offsetX = (canvas.width - image.width) / 2;
+    const offsetY = (canvas.height - image.height) / 2;
+
+    ctx.drawImage(image, offsetX, offsetY, image.width, image.height);
+}
+
+// ===================== КУРСОР И РАСТЯЖЕНИЕ =====================
+canvas.addEventListener("mousemove", e => {
+    const rect = canvas.getBoundingClientRect();
+    const container = document.getElementById('workspace-container');
+    const scrollX = container.scrollLeft;
+    const scrollY = container.scrollTop;
+
+    const mx = e.clientX - rect.left + scrollX;
+    const my = e.clientY - rect.top + scrollY;
+
+    const offsetX = (canvas.width - image.width) / 2;
+    const offsetY = (canvas.height - image.height) / 2;
+    const margin = 10;
+
+    // ПЕРЕМЕЩЕНИЕ
+    if (isDragging) {
+        const dx = mx - dragOffsetX;
+        const dy = my - dragOffsetY;
+        dragOffsetX = mx;
+        dragOffsetY = my;
+
+        // Сдвигаем картинку
+        drawCanvas();
+        ctx.drawImage(image, offsetX + dx, offsetY + dy, image.width, image.height);
         return;
     }
 
+    // РАСТЯЖЕНИЕ
+    if (isResizing) {
+        const dx = mx - dragOffsetX;
+        const dy = my - dragOffsetY;
+
+        if (resizeDir.includes("right")) image.width += dx;
+        if (resizeDir.includes("left"))  { image.width -= dx; dragOffsetX += dx; }
+        if (resizeDir.includes("bottom")) image.height += dy;
+        if (resizeDir.includes("top"))    { image.height -= dy; dragOffsetY += dy; }
+
+        // ограничиваем минимальные размеры
+        image.width = Math.max(10, image.width);
+        image.height = Math.max(10, image.height);
+
+        // расширяем canvas, если картинка выходит за пределы
+        canvas.width = Math.max(canvas.width, image.width + 20);
+        canvas.height = Math.max(canvas.height, image.height + 20);
+
+        dragOffsetX = mx;
+        dragOffsetY = my;
+
+        drawCanvas();
+        return;
+    }
+
+    // изменение курсора
+    let cursor = "default";
+    if (mx >= offsetX - margin && mx <= offsetX + image.width + margin &&
+        my >= offsetY - margin && my <= offsetY + image.height + margin) {
+
+        const onLeft = Math.abs(mx - offsetX) < margin;
+        const onRight = Math.abs(mx - (offsetX + image.width)) < margin;
+        const onTop = Math.abs(my - offsetY) < margin;
+        const onBottom = Math.abs(my - (offsetY + image.height)) < margin;
+
+        if ((onLeft && onTop) || (onRight && onBottom)) cursor = "nwse-resize";
+        else if ((onRight && onTop) || (onLeft && onBottom)) cursor = "nesw-resize";
+        else if (onLeft || onRight) cursor = "ew-resize";
+        else if (onTop || onBottom) cursor = "ns-resize";
+        else cursor = "move";
+    }
+
+    canvas.style.cursor = cursor;
+});
+
+// ===================== MOUSE DOWN =====================
+canvas.addEventListener("mousedown", e => {
+    const rect = canvas.getBoundingClientRect();
+    const container = document.getElementById('workspace-container');
+    const scrollX = container.scrollLeft;
+    const scrollY = container.scrollTop;
+
+    const mx = e.clientX - rect.left + scrollX;
+    const my = e.clientY - rect.top + scrollY;
+
+    const offsetX = (canvas.width - image.width) / 2;
+    const offsetY = (canvas.height - image.height) / 2;
+    const margin = 10;
+
+    const onLeft = Math.abs(mx - offsetX) < margin;
+    const onRight = Math.abs(mx - (offsetX + image.width)) < margin;
+    const onTop = Math.abs(my - offsetY) < margin;
+    const onBottom = Math.abs(my - (offsetY + image.height)) < margin;
+
+    resizeDir = "";
+    if (onLeft) resizeDir += "left";
+    if (onRight) resizeDir += "right";
+    if (onTop) resizeDir += "top";
+    if (onBottom) resizeDir += "bottom";
+
+    if (resizeDir) {
+        isResizing = true;
+        dragOffsetX = mx;
+        dragOffsetY = my;
+    } else if (mx >= offsetX && mx <= offsetX + image.width &&
+               my >= offsetY && my <= offsetY + image.height) {
+        isDragging = true;
+        dragOffsetX = mx;
+        dragOffsetY = my;
+    }
+});
+
+// ===================== MOUSE UP =====================
+document.addEventListener("mouseup", () => {
+    if (isResizing) {
+        isResizing = false;
+        fetch("/canvas/resize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ width: image.width, height: image.height })
+        }).then(() => reloadImage());
+    }
+    if (isDragging) isDragging = false;
+});
+
+// ===================== ЗАГРУЗКА ФАЙЛА =====================
+document.getElementById("fileInput").addEventListener("change", e => {
+    if (!e.target.files.length) return;
     const formData = new FormData();
-    formData.append("image", input.files[0]);
+    formData.append("image", e.target.files[0]);
+    fetch("/upload", { method: "POST", body: formData }).then(() => reloadImage());
+});
 
-    fetch("/upload", {
-        method: "POST",
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.error) {
-            message.textContent = data.error;
-            preview.style.display = "none";
-        } else {
-            message.textContent = data.message;
-            preview.src = data.image_url + "?" + new Date().getTime();
-            preview.style.display = "block";
-        }
-    })
-    .catch(() => {
-        message.textContent = "Ошибка загрузки";
-    });
-}
-
-function clearEditor() {
-    fetch("/clear", {
-        method: "POST"
-    })
-    .then(res => res.json())
-    .then(data => {
-        const preview = document.getElementById("preview");
-
-        if (data.error) {
-            alert(data.error);
-            return;
-        }
-
-        // Сброс изображения
-        preview.src = "";
-        preview.style.display = "none";
-
-        // Очистка input file
-        document.getElementById("uploadInput").value = "";
-
-        // Сброс ползунков и полей
-        document.querySelectorAll("input[type=range]").forEach(el => {
-            el.value = el.defaultValue;
-        });
-
-        document.querySelectorAll("input[type=number]").forEach(el => {
-            el.value = "";
-        });
-
-        document.getElementById("saveMessage").textContent = "";
-
-        alert(data.message);
-    });
+// ===================== СОХРАНЕНИЕ =====================
+function exportImage() {
+    const format = document.getElementById("exportFormat").value;
+    if (!format) return;
+    window.location.href = `/export?format=${format}`;
 }
 
 
-function saveImage() {
-    const filename = "current.png";
-    const url = `/download/${filename}`;
-    const msg = document.getElementById("saveMessage");
-    msg.innerHTML = `<a href="${url}" download>Скачать изображение</a>`;
+// ===================== UI =====================
+function toggleUI() { document.body.classList.toggle("minimal"); }
+
+// ===================== ИНФОРМАЦИЯ =====================
+function updateCanvasInfo() {
+    document.getElementById("canvas-size").textContent = image.width + "×" + image.height + " px";
 }
 
-function resizeImage() {
-    const width = document.getElementById("width").value;
-    const height = document.getElementById("height").value;
-    const scale = document.getElementById("scale").value;
-
-    fetch("/resize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            width: width ? parseInt(width) : null,
-            height: height ? parseInt(height) : null,
-            scale: scale ? parseFloat(scale) : null
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.error) {
-            alert(data.error);
-        } else {
-            document.getElementById("preview").src =
-                data.image_url + "?" + new Date().getTime();
-        }
-    });
-}
-
-function cropImage() {
-    fetch("/crop", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            x: document.getElementById("cropX").value,
-            y: document.getElementById("cropY").value,
-            width: document.getElementById("cropW").value,
-            height: document.getElementById("cropH").value
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.error) {
-            alert(data.error);
-        } else {
-            document.getElementById("preview").src =
-                data.image_url + "?" + new Date().getTime();
-        }
-    });
-}
-
-function flipImage(mode) {
-    fetch("/flip", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: mode })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.error) {
-            alert(data.error);
-        } else {
-            document.getElementById("preview").src =
-                data.image_url + "?" + new Date().getTime();
-        }
-    });
-}
-
-function rotateImage() {
-    fetch("/rotate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            angle: document.getElementById("angle").value,
-            center_x: document.getElementById("centerX").value || null,
-            center_y: document.getElementById("centerY").value || null
-        })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.error) {
-            alert(data.error);
-        } else {
-            document.getElementById("preview").src =
-                data.image_url + "?" + new Date().getTime();
-        }
-    });
-}
-
-function applyBrightnessContrast() {
-    fetch("/brightness_contrast", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            brightness: document.getElementById("brightness").value,
-            contrast: document.getElementById("contrast").value
-        })
-    })
-    .then(r => r.json())
-    .then(updateImage);
-}
-
-function applyColorBalance() {
-    fetch("/color_balance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            r: document.getElementById("red").value,
-            g: document.getElementById("green").value,
-            b: document.getElementById("blue").value
-        })
-    })
-    .then(r => r.json())
-    .then(updateImage);
-}
-
-function addGaussianNoise() {
-    fetch("/noise", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "gaussian", sigma: 25 })
-    })
-    .then(r => r.json())
-    .then(updateImage);
-}
-
-function addSPNoise() {
-    fetch("/noise", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "sp", amount: 0.01 })
-    })
-    .then(r => r.json())
-    .then(updateImage);
-}
-
-function applyBlur(type) {
-    fetch("/blur", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: type, kernel: 7 })
-    })
-    .then(r => r.json())
-    .then(updateImage);
-}
+// ===================== UNDO / RESET / CLEAR =====================
+function undo() { fetch("/undo", { method: "POST" }).then(() => reloadImage()); }
+function resetImage() { fetch("/reset", { method: "POST" }).then(() => reloadImage()); }
