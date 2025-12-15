@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>3D Viewer — ImageEditor</title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <style>
+    body { margin:0; height:100vh; display:flex; font-family: Arial, sans-serif; }
+    #controls { width: 320px; padding: 12px; background:#f7f7f7; box-sizing:border-box; overflow:auto; border-right:1px solid #ddd; color:#111 }
+    #viewer { flex:1; display:flex; flex-direction:column; background:#222; align-items:center; justify-content:center; }
+    model-viewer { width:100%; height:100%; }
+    h3 { margin:8px 0 6px; }
+    label { display:block; margin:6px 0; font-size:14px; }
+    input[type="number"], select, input[type="text"] { width:100%; padding:6px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px; }
+    .row { display:flex; gap:8px; }
+    .row .col { flex:1; }
+    .btn { display:block; margin:8px 0; padding:8px; text-align:center; background:#1976d2; color:#fff; border-radius:6px; cursor:pointer; }
+    .btn.secondary { background:#666; }
+    .small { font-size:12px; padding:6px; }
+    select.prim-param { margin-top:6px; }
+    #objList { width:100%; padding:6px; border-radius:4px; border:1px solid #ccc; box-sizing:border-box; }
+    .hint { color:#666; font-size:12px; margin-top:6px; }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <h3>Сцена</h3>
+    <div class="row">
+      <div class="col"><button id="btnCreate" class="btn small">Создать сцену</button></div>
+      <div class="col"><button id="btnRefresh" class="btn small secondary">Обновить</button></div>
+    </div>
+    <label>Scene ID
+      <input id="sceneId" type="text" placeholder="Сцена..." />
+    </label>
+
+    <h3>Добавить фигуру</h3>
+    <label>Тип
+      <select id="primType">
+        <option value="box">Box</option>
+        <option value="sphere">Sphere</option>
+        <option value="cylinder">Cylinder</option>
+        <option value="cone">Cone</option>
+      </select>
+    </label>
+
+    <div id="primParams">
+      <!-- динамические параметры: size1/size2/size3 -->
+      <label>Параметр A
+        <input id="p1" type="number" step="0.1" value="1" />
+      </label>
+      <label>Параметр B
+        <input id="p2" type="number" step="0.1" value="1" />
+      </label>
+      <label>Параметр C
+        <input id="p3" type="number" step="0.1" value="1" />
+      </label>
+    </div>
+
+    <label>Позиция
+      <div class="row">
+        <input id="posX" type="number" class="col" step="0.1" value="0" />
+        <input id="posY" type="number" class="col" step="0.1" value="0" />
+        <input id="posZ" type="number" class="col" step="0.1" value="0" />
+      </div>
+    </label>
+    <button id="btnAdd" class="btn">Добавить</button>
+
+    <h3>Transform</h3>
+    <label>Объект
+      <select id="objList"></select>
+    </label>
+
+    <label>Перемещение
+      <div class="row">
+        <input id="dx" type="number" class="col" step="0.1" value="0" />
+        <input id="dy" type="number" class="col" step="0.1" value="0" />
+        <input id="dz" type="number" class="col" step="0.1" value="0" />
+      </div>
+      <div class="row">
+        <button id="btnTranslatePlus" class="btn small">Переместить +</button>
+        <button id="btnTranslateMinus" class="btn small secondary">Переместить −</button>
+      </div>
+    </label>
+
+    <label>Scale
+      <div class="row">
+        <input id="scale" type="number" class="col" step="0.01" value="1" />
+        <select id="scaleMode" class="col">
+          <option value="uniform">Все</option>
+          <option value="axes">По оси</option>
+        </select>
+      </div>
+      <div id="scaleAxes" style="display:none; margin-top:6px;">
+        <input id="sx" type="number" step="0.01" value="1" placeholder="sx" />
+        <input id="sy" type="number" step="0.01" value="1" placeholder="sy" />
+        <input id="sz" type="number" step="0.01" value="1" placeholder="sz" />
+      </div>
+      <button id="btnScale" class="btn">Применить</button>
+    </label>
+
+    <label>Поворот
+      <div class="row">
+        <select id="rotAxis" class="col">
+          <option value="0,0,1">Z</option>
+          <option value="0,1,0">Y</option>
+          <option value="1,0,0">X</option>
+        </select>
+        <input id="angle" type="number" class="col" step="1" value="30" />
+      </div>
+      <button id="btnRotate" class="btn">Повернуть</button>
+    </label>
+
+    <button id="btnDelete" class="btn secondary">Удалить объект</button>
+
+    <p class="hint">После действий нажимайте "Обновить" или дождитесь автоматического обновления модели.</p>
+  </div>
+
+  <div id="viewer">
+    <model-viewer id="mv" camera-controls auto-rotate exposure="1" style="width:100%; height:100%;" alt="3D Scene">
+      <!-- model-viewer src будет устанавливаться динамически -->
+    </model-viewer>
+  </div>
+
+<script>
+  // helpers
+  const api = {
+    create: '/api/3d/create',
+    add: '/api/3d/add',
+    objects: (sid) => `/api/3d/objects/${sid}`,
+    transform: '/api/3d/transform',
+  };
+
+  const btnCreate = document.getElementById('btnCreate');
+  const btnRefresh = document.getElementById('btnRefresh');
+  const sceneIdInput = document.getElementById('sceneId');
+  const primType = document.getElementById('primType');
+  const p1 = document.getElementById('p1'), p2 = document.getElementById('p2'), p3 = document.getElementById('p3');
+  const posX = document.getElementById('posX'), posY = document.getElementById('posY'), posZ = document.getElementById('posZ');
+  const btnAdd = document.getElementById('btnAdd');
+  const objList = document.getElementById('objList');
+  const mv = document.getElementById('mv');
+
+  const dx = document.getElementById('dx'), dy = document.getElementById('dy'), dz = document.getElementById('dz');
+  const btnTranslatePlus = document.getElementById('btnTranslatePlus'), btnTranslateMinus = document.getElementById('btnTranslateMinus');
+  const scale = document.getElementById('scale'), scaleMode = document.getElementById('scaleMode'), sx = document.getElementById('sx'), sy = document.getElementById('sy'), sz = document.getElementById('sz'), btnScale = document.getElementById('btnScale');
+  const rotAxis = document.getElementById('rotAxis'), angle = document.getElementById('angle'), btnRotate = document.getElementById('btnRotate');
+
+  function showSceneGLB(scene_id) {
+    const url = `/static/3d/scenes/${scene_id}.glb?t=` + Date.now();
+
+    // сначала убираем старую модель
+    mv.removeAttribute('src');
+    mv.poster = '';
+
+    // проверяем, есть ли файл
+    fetch(url, { method: 'HEAD' })
+      .then(res => {
+        if (res.ok) {
+          // файл есть — устанавливаем src с таймстампом
+          mv.src = url;
+        } else {
+          // файла нет — ничего не показываем
+          mv.removeAttribute('src');
+          mv.poster = '';
+        }
+      })
+      .catch(() => {
+        mv.removeAttribute('src');
+        mv.poster = '';
+      });
+  }
+
+  btnCreate.onclick = async () => {
+    const res = await fetch(api.create, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({size:[10,10,10]})});
+    const data = await res.json();
+    if (data.success) {
+      sceneIdInput.value = data.scene_id;
+      // no objects yet, so just ensure viewer cleared
+      showSceneGLB(data.scene_id);
+      loadObjects(data.scene_id);
+    } else {
+      alert('Ошибка: ' + (data.error||'unknown'));
+    }
+  };
+
+  btnRefresh.onclick = () => {
+    const sid = sceneIdInput.value.trim();
+    if (!sid) return alert('Укажите Scene ID');
+    showSceneGLB(sid);
+    loadObjects(sid);
+  };
+
+  async function loadObjects(scene_id) {
+    objList.innerHTML = '';
+    if (!scene_id) return;
+    const res = await fetch(api.objects(scene_id));
+    const data = await res.json();
+    if (data.success) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.text = '[Выберите объект]';
+      objList.appendChild(opt);
+      data.objects.forEach(o => {
+        const el = document.createElement('option');
+        el.value = o.id;
+        el.text = o.name;
+        objList.appendChild(el);
+      });
+    } else {
+      // no objects
+    }
+  }
+
+  primType.addEventListener('change', () => {
+    // меняем подписи/значения параметров в зависимости от типа
+    const t = primType.value;
+    if (t === 'box') {
+      p1.value=1; p2.value=1; p3.value=1;
+      p1.previousElementSibling && (p1.previousElementSibling.textContent = 'Param A (X size)');
+      p2.previousElementSibling && (p2.previousElementSibling.textContent = 'Param B (Y size)');
+      p3.previousElementSibling && (p3.previousElementSibling.textContent = 'Param C (Z size)');
+    } else if (t === 'sphere') {
+      p1.value=1; p2.value=0; p3.value=0;
+      p1.previousElementSibling && (p1.previousElementSibling.textContent = 'Radius');
+      p2.previousElementSibling && (p2.previousElementSibling.textContent = 'unused');
+      p3.previousElementSibling && (p3.previousElementSibling.textContent = 'unused');
+    } else if (t === 'cylinder' || t === 'cone') {
+      p1.value=0.5; p2.value=1.0; p3.value=0;
+      p1.previousElementSibling && (p1.previousElementSibling.textContent = 'Radius');
+      p2.previousElementSibling && (p2.previousElementSibling.textContent = 'Height');
+      p3.previousElementSibling && (p3.previousElementSibling.textContent = 'unused');
+    } else if (t === 'torus') {
+      p1.value=1.0; p2.value=0.25; p3.value=0;
+      p1.previousElementSibling && (p1.previousElementSibling.textContent = 'Radius');
+      p2.previousElementSibling && (p2.previousElementSibling.textContent = 'Tube radius');
+      p3.previousElementSibling && (p3.previousElementSibling.textContent = 'unused');
+    }
+  });
+  primType.dispatchEvent(new Event('change'));
+
+  btnAdd.onclick = async () => {
+    const sid = sceneIdInput.value.trim();
+    if (!sid) return alert('Укажите Scene ID');
+    const type = primType.value;
+    const params = {};
+    // map p1/p2/p3 to meaningful params
+    if (type === 'box') {
+      params.extents = [parseFloat(p1.value), parseFloat(p2.value), parseFloat(p3.value)];
+    } else if (type === 'sphere') {
+      params.radius = parseFloat(p1.value);
+    } else if (type === 'cylinder') {
+      params.radius = parseFloat(p1.value);
+      params.height = parseFloat(p2.value);
+    } else if (type === 'cone') {
+      params.radius = parseFloat(p1.value);
+      params.height = parseFloat(p2.value);
+    } else if (type === 'torus') {
+      params.radius = parseFloat(p1.value);
+      params.tube_radius = parseFloat(p2.value);
+    }
+
+    const pos = [parseFloat(posX.value), parseFloat(posY.value), parseFloat(posZ.value)];
+
+    const res = await fetch(api.add, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ scene_id: sid, type, params, position: pos })
+    });
+    const data = await res.json();
+    if (data.success) {
+      // обновляем список объектов и показываем сцену
+      await loadObjects(sid);
+      showSceneGLB(sid);
+    } else {
+      alert('Ошибка: ' + (data.error || 'unknown'));
+    }
+  };
+
+  // Translate buttons
+  btnTranslatePlus.onclick = async () => {
+    await doTranslate(1);
+  };
+  btnTranslateMinus.onclick = async () => {
+    await doTranslate(-1);
+  };
+
+  async function doTranslate(sign=1) {
+    const sid = sceneIdInput.value.trim();
+    const oid = objList.value;
+    if (!sid || !oid) return alert('Укажите сцену и объект');
+    const body = {
+      scene_id: sid,
+      object_id: oid,
+      operation: 'translate',
+      params: {
+        x: sign * parseFloat(dx.value || 0),
+        y: sign * parseFloat(dy.value || 0),
+        z: sign * parseFloat(dz.value || 0)
+      }
+    };
+    const res = await fetch(api.transform, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+    const data = await res.json();
+    if (data.success) {
+      showSceneGLB(sid);
+      loadObjects(sid);
+    } else {
+      alert('Ошибка: ' + (data.error || 'unknown'));
+    }
+  }
+
+  // Scale
+  scaleMode.addEventListener('change', () => {
+    document.getElementById('scaleAxes').style.display = (scaleMode.value === 'axes') ? 'flex' : 'none';
+  });
+
+  btnScale.onclick = async () => {
+    const sid = sceneIdInput.value.trim();
+    const oid = objList.value;
+    if (!sid || !oid) return alert('Укажите сцену и объект');
+    let params = {};
+    if (scaleMode.value === 'uniform') {
+      params.sx = parseFloat(scale.value);
+      params.sy = parseFloat(scale.value);
+      params.sz = parseFloat(scale.value);
+    } else {
+      params.sx = parseFloat(sx.value);
+      params.sy = parseFloat(sy.value);
+      params.sz = parseFloat(sz.value);
+    }
+    const body = { scene_id: sid, object_id: oid, operation: 'scale', params };
+    const res = await fetch(api.transform, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (data.success) {
+      showSceneGLB(sid);
+    } else {
+      alert('Ошибка: ' + (data.error || 'unknown'));
+    }
+  };
+
+  // Rotate
+  btnRotate.onclick = async () => {
+    const sid = sceneIdInput.value.trim();
+    const oid = objList.value;
+    if (!sid || !oid) return alert('Укажите сцену и объект');
+    const axis = rotAxis.value.split(',').map(Number);
+    const ang = parseFloat(angle.value || 0);
+    const body = { scene_id: sid, object_id: oid, operation: 'rotate', params: { axis, angle_deg: ang } };
+    const res = await fetch(api.transform, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const data = await res.json();
+    if (data.success) {
+      showSceneGLB(sid);
+    } else {
+      alert('Ошибка: ' + (data.error || 'unknown'));
+    }
+  };
+
+  // auto-load if query scene_id given
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('scene_id')) {
+    sceneIdInput.value = params.get('scene_id');
+    loadObjects(params.get('scene_id'));
+    showSceneGLB(params.get('scene_id'));
+  }
+
+  const btnDelete = document.getElementById('btnDelete');
+
+btnDelete.onclick = async () => {
+  const sid = sceneIdInput.value.trim();
+  const oid = objList.value;
+  if (!sid || !oid) return alert('Укажите сцену и объект');
+
+  if (!confirm('Удалить выбранный объект?')) return;
+
+  const res = await fetch('/api/3d/delete', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({scene_id: sid, object_id: oid})
+  });
+  const data = await res.json();
+  if (data.success) {
+    await loadObjects(sid);
+    // принудительное обновление модели
+    showSceneGLB(sid);
+  } else {
+    alert('Ошибка: ' + (data.error || 'unknown'));
+  }
+};
+
+</script>
+</body>
+</html>

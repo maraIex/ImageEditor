@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Векторный редактор</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/vector-style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Верхняя панель -->
+        <header class="app-header">
+            <div class="header-left">
+                <h1><i class="fas fa-pen-fancy"></i> Векторный редактор</h1>
+                <div class="project-info">
+                    <span id="projectName">Новый проект</span>
+                    <span class="status" id="saveStatus"></span>
+                </div>
+            </div>
+            <div class="header-right">
+                <button class="btn-header" id="btnSaveProject" title="Сохранить проект (Ctrl+S)">
+                    <i class="fas fa-save"></i> Сохранить
+                </button>
+                <button class="btn-header" id="btnLoadProject" title="Загрузить проект">
+                    <i class="fas fa-folder-open"></i> Загрузить
+                </button>
+                <input type="file" id="projectFileInput" accept=".vdraw" style="display: none;">
+                <button class="btn-header btn-success" id="btnExport" title="Экспорт">
+                    <i class="fas fa-download"></i> Экспорт
+                </button>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <!-- Левая панель инструментов -->
+            <aside class="toolbar-left">
+                <div class="tool-section">
+                    <h3><i class="fas fa-sliders-h"></i> Инструменты</h3>
+
+                    <div class="tool-grid">
+                        <!-- Инструмент выбора -->
+                        <button class="tool-btn active" data-tool="select" title="Выбор (V)">
+                            <i class="fas fa-mouse-pointer"></i>
+                            <span>Выбор</span>
+                        </button>
+
+                        <!-- Инструмент создания -->
+                        <button class="tool-btn" data-tool="rect" title="Прямоугольник (R)">
+                            <i class="fas fa-square"></i>
+                            <span>Прямоуг.</span>
+                        </button>
+
+                        <button class="tool-btn" data-tool="ellipse" title="Эллипс (E)">
+                            <i class="fas fa-circle"></i>
+                            <span>Эллипс</span>
+                        </button>
+
+                        <button class="tool-btn" data-tool="line" title="Линия (L)">
+                            <i class="fas fa-minus"></i>
+                            <span>Линия</span>
+                        </button>
+
+                        <button class="tool-btn" data-tool="polyline" title="Ломаная (P)">
+                            <i class="fas fa-draw-polygon"></i>
+                            <span>Ломаная</span>
+                        </button>
+
+                        <button class="tool-btn" data-tool="polygon" title="Многоугольник (N)">
+                            <i class="fas fa-shapes"></i>
+                            <span>Многоуг.</span>
+                        </button>
+
+                        <button class="tool-btn" data-tool="star" title="Звезда (S)">
+                            <i class="fas fa-star"></i>
+                            <span>Звезда</span>
+                        </button>
+
+                        <button class="tool-btn" data-tool="text" title="Текст (T)">
+                            <i class="fas fa-font"></i>
+                            <span>Текст</span>
+                        </button>
+
+                        <button class="tool-btn" data-tool="text-path" title="Текст по пути">
+                            <i class="fas fa-text-width"></i>
+                            <span>Текст-путь</span>
+                        </button>
+
+                        <button class="tool-btn" data-tool="gradient" title="Градиент (G)">
+                            <i class="fas fa-fill-drip"></i>
+                            <span>Градиент</span>
+                        </button>
+
+                        <button class="tool-btn" data-tool="image" title="Вставить изображение (I)">
+                            <i class="fas fa-image"></i>
+                            <span>Изображение</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tool-section">
+                    <h3><i class="fas fa-expand-alt"></i> Трансформация</h3>
+                    <div class="transform-controls">
+                        <button class="btn-sm" id="btnRotateL" title="Повернуть налево (-15°)">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                        <button class="btn-sm" id="btnRotateR" title="Повернуть направо (15°)">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                        <button class="btn-sm" id="btnFlipH" title="Отразить по горизонтали">
+                            <i class="fas fa-arrows-alt-h"></i>
+                        </button>
+                        <button class="btn-sm" id="btnFlipV" title="Отразить по вертикали">
+                            <i class="fas fa-arrows-alt-v"></i>
+                        </button>
+                    </div>
+                    <div class="input-group">
+                        <label>Поворот:</label>
+                        <input type="number" id="inputRotate" value="0" step="15">
+                        <span>°</span>
+                    </div>
+                    <div class="input-group">
+                        <label>Масштаб:</label>
+                        <input type="number" id="inputScale" value="100" step="10">
+                        <span>%</span>
+                    </div>
+                </div>
+
+                <div class="tool-section">
+                    <h3><i class="fas fa-ruler-combined"></i> Размер холста</h3>
+                    <div class="input-group">
+                        <label>Ширина:</label>
+                        <input type="number" id="canvasWidth" value="800" min="100" max="5000">
+                        <select id="canvasUnit">
+                            <option value="px">px</option>
+                            <option value="mm">mm</option>
+                            <option value="cm">cm</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Высота:</label>
+                        <input type="number" id="canvasHeight" value="600" min="100" max="5000">
+                        <select id="canvasUnitH">
+                            <option value="px">px</option>
+                            <option value="mm">mm</option>
+                            <option value="cm">cm</option>
+                        </select>
+                    </div>
+                    <button class="btn" id="btnResizeCanvas">
+                        <i class="fas fa-expand"></i> Применить
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Центральная область - холст -->
+            <main class="canvas-area">
+                <div class="canvas-toolbar">
+                    <div class="history-controls">
+                        <button class="btn-sm" id="btnUndo" title="Отмена (Ctrl+Z)">
+                            <i class="fas fa-undo"></i>
+                        </button>
+                        <button class="btn-sm" id="btnRedo" title="Повтор (Ctrl+Y)">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                        <span class="history-info" id="historyInfo">0/0</span>
+                    </div>
+
+                    <div class="zoom-controls">
+                        <button class="btn-sm" id="btnZoomOut" title="Уменьшить (Ctrl+-)">
+                            <i class="fas fa-search-minus"></i>
+                        </button>
+                        <select id="zoomSelect" title="Масштаб">
+                            <option value="0.25">25%</option>
+                            <option value="0.5">50%</option>
+                            <option value="0.75">75%</option>
+                            <option value="1" selected>100%</option>
+                            <option value="1.5">150%</option>
+                            <option value="2">200%</option>
+                            <option value="3">300%</option>
+                            <option value="4">400%</option>
+                        </select>
+                        <button class="btn-sm" id="btnZoomIn" title="Увеличить (Ctrl++)">
+                            <i class="fas fa-search-plus"></i>
+                        </button>
+                        <button class="btn-sm" id="btnZoomFit" title="Подогнать под экран">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+
+                    <div class="align-controls">
+                        <button class="btn-sm" id="btnAlignLeft" title="Выровнять по левому краю">
+                            <i class="fas fa-align-left"></i>
+                        </button>
+                        <button class="btn-sm" id="btnAlignCenterH" title="Выровнять по горизонтали">
+                            <i class="fas fa-align-center"></i>
+                        </button>
+                        <button class="btn-sm" id="btnAlignRight" title="Выровнять по правому краю">
+                            <i class="fas fa-align-right"></i>
+                        </button>
+                        <button class="btn-sm" id="btnAlignTop" title="Выровнять по верхнему краю">
+                            <i class="fas fa-align-left fa-rotate-90"></i>
+                        </button>
+                        <button class="btn-sm" id="btnAlignCenterV" title="Выровнять по вертикали">
+                            <i class="fas fa-align-center fa-rotate-90"></i>
+                        </button>
+                        <button class="btn-sm" id="btnAlignBottom" title="Выровнять по нижнему краю">
+                            <i class="fas fa-align-right fa-rotate-90"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="canvas-container" id="canvasContainer">
+                    <div class="canvas-grid" id="canvasGrid"></div>
+                    <svg id="svgCanvas" xmlns="http://www.w3.org/2000/svg"
+                         width="800" height="600"
+                         style="background: white; border: 1px solid #ddd;">
+                        <defs id="svgDefs"></defs>
+                        <g id="svgLayers"></g>
+                    </svg>
+                    <div class="canvas-overlay" id="canvasOverlay"></div>
+                </div>
+
+                <div class="status-bar">
+                    <div class="status-item">
+                        <i class="fas fa-mouse-pointer"></i>
+                        <span id="cursorPos">X: 0, Y: 0</span>
+                    </div>
+                    <div class="status-item">
+                        <i class="fas fa-layer-group"></i>
+                        <span id="layerInfo">Слой: 1</span>
+                    </div>
+                    <div class="status-item">
+                        <i class="fas fa-expand-alt"></i>
+                        <span id="canvasSize">800 × 600 px</span>
+                    </div>
+                    <div class="status-item">
+                        <i class="fas fa-memory"></i>
+                        <span id="memoryInfo">-</span>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Правая панель свойств -->
+            <aside class="toolbar-right">
+                <div class="properties-tabs">
+                    <button class="tab-btn active" data-tab="props">Свойства</button>
+                    <button class="tab-btn" data-tab="layers">Слои</button>
+                    <button class="tab-btn" data-tab="filters">Фильтры</button>
+                    <button class="tab-btn" data-tab="animations">Анимация</button>
+                </div>
+
+                <div class="tab-content active" id="tab-props">
+                    <div class="property-group">
+                        <h4><i class="fas fa-fill-drip"></i> Заливка</h4>
+                        <div class="input-group">
+                            <label>Цвет:</label>
+                            <input type="color" id="propFillColor" value="#4a90e2">
+                        </div>
+                        <div class="input-group">
+                            <label>Прозрачность:</label>
+                            <input type="range" id="propFillOpacity" min="0" max="1" step="0.1" value="1">
+                            <span id="fillOpacityValue">100%</span>
+                        </div>
+                        <div class="input-group">
+                            <label>Тип:</label>
+                            <select id="propFillType">
+                                <option value="solid">Сплошной</option>
+                                <option value="linear">Линейный градиент</option>
+                                <option value="radial">Радиальный градиент</option>
+                                <option value="pattern">Узор</option>
+                                <option value="none">Нет</option>
+                            </select>
+                        </div>
+                        <div id="gradientEditor" class="gradient-editor" style="display: none;">
+                            <!-- Градиент редактор будет добавляться динамически -->
+                        </div>
+                    </div>
+
+                    <div class="property-group">
+                        <h4><i class="fas fa-brush"></i> Обводка</h4>
+                        <div class="input-group">
+                            <label>Цвет:</label>
+                            <input type="color" id="propStrokeColor" value="#000000">
+                        </div>
+                        <div class="input-group">
+                            <label>Ширина:</label>
+                            <input type="number" id="propStrokeWidth" value="1" min="0" step="0.1">
+                            <span>px</span>
+                        </div>
+                        <div class="input-group">
+                            <label>Тип:</label>
+                            <select id="propStrokeDasharray">
+                                <option value="">Сплошная</option>
+                                <option value="5,5">Пунктир</option>
+                                <option value="10,5">Длинный пунктир</option>
+                                <option value="5,10,20">Смешанный</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Стыки:</label>
+                            <select id="propStrokeLinejoin">
+                                <option value="miter">Острые</option>
+                                <option value="round">Скругленные</option>
+                                <option value="bevel">Скошенные</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="property-group">
+                        <h4><i class="fas fa-text-height"></i> Текст</h4>
+                        <div class="input-group">
+                            <label>Шрифт:</label>
+                            <select id="propFontFamily">
+                                <option value="Arial">Arial</option>
+                                <option value="Helvetica">Helvetica</option>
+                                <option value="Times New Roman">Times New Roman</option>
+                                <option value="Georgia">Georgia</option>
+                                <option value="Courier New">Courier New</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Размер:</label>
+                            <input type="number" id="propFontSize" value="16" min="1">
+                            <span>px</span>
+                        </div>
+                        <div class="input-group">
+                            <label>Стиль:</label>
+                            <select id="propFontStyle">
+                                <option value="normal">Обычный</option>
+                                <option value="italic">Курсив</option>
+                                <option value="oblique">Наклонный</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Вес:</label>
+                            <select id="propFontWeight">
+                                <option value="normal">Обычный</option>
+                                <option value="bold">Жирный</option>
+                                <option value="300">Светлый</option>
+                                <option value="600">Полужирный</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Выравнивание:</label>
+                            <select id="propTextAnchor">
+                                <option value="start">По левому краю</option>
+                                <option value="middle">По центру</option>
+                                <option value="end">По правому краю</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="property-group">
+                        <h4><i class="fas fa-cube"></i> Размер и положение</h4>
+                        <div class="input-row">
+                            <div class="input-col">
+                                <label>X:</label>
+                                <input type="number" id="propX" value="0" step="1">
+                            </div>
+                            <div class="input-col">
+                                <label>Y:</label>
+                                <input type="number" id="propY" value="0" step="1">
+                            </div>
+                        </div>
+                        <div class="input-row">
+                            <div class="input-col">
+                                <label>Ширина:</label>
+                                <input type="number" id="propWidth" value="100" step="1">
+                            </div>
+                            <div class="input-col">
+                                <label>Высота:</label>
+                                <input type="number" id="propHeight" value="100" step="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="property-actions">
+                        <button class="btn" id="btnApplyProps">
+                            <i class="fas fa-check"></i> Применить
+                        </button>
+                        <button class="btn" id="btnResetProps">
+                            <i class="fas fa-redo"></i> Сбросить
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-layers">
+                    <div class="layers-header">
+                        <button class="btn-sm" id="btnAddLayer" title="Добавить слой">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button class="btn-sm" id="btnDeleteLayer" title="Удалить слой">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        <button class="btn-sm" id="btnMergeLayers" title="Объединить слои">
+                            <i class="fas fa-layer-group"></i>
+                        </button>
+                    </div>
+
+                    <div class="layers-list" id="layersList">
+                        <!-- Слои будут добавляться динамически -->
+                        <div class="layer-item active">
+                            <i class="fas fa-eye"></i>
+                            <span class="layer-name">Слой 1</span>
+                            <i class="fas fa-lock-open"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-filters">
+                    <div class="filter-list">
+                        <div class="filter-item" data-filter="blur">
+                            <i class="fas fa-blur"></i>
+                            <span>Размытие</span>
+                        </div>
+                        <div class="filter-item" data-filter="shadow">
+                            <i class="fas fa-shadow"></i>
+                            <span>Тень</span>
+                        </div>
+                        <div class="filter-item" data-filter="glow">
+                            <i class="fas fa-sun"></i>
+                            <span>Свечение</span>
+                        </div>
+                        <div class="filter-item" data-filter="emboss">
+                            <i class="fas fa-mountain"></i>
+                            <span>Рельеф</span>
+                        </div>
+                        <div class="filter-item" data-filter="invert">
+                            <i class="fas fa-adjust"></i>
+                            <span>Инверсия</span>
+                        </div>
+                        <div class="filter-item" data-filter="neon">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>Неон</span>
+                        </div>
+                    </div>
+
+                    <div class="filter-controls" id="filterControls">
+                        <!-- Элементы управления фильтрами будут добавляться динамически -->
+                        <p>Выберите фильтр для настройки</p>
+                    </div>
+
+                    <div class="filter-actions">
+                        <button class="btn" id="btnAddFilter">
+                            <i class="fas fa-plus"></i> Добавить фильтр
+                        </button>
+                        <button class="btn" id="btnClearFilters">
+                            <i class="fas fa-trash"></i> Очистить
+                        </button>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-animations">
+                    <div class="animation-controls">
+                        <div class="input-group">
+                            <label>Тип анимации:</label>
+                            <select id="animType">
+                                <option value="translate">Перемещение</option>
+                                <option value="rotate">Вращение</option>
+                                <option value="scale">Масштаб</option>
+                                <option value="color">Изменение цвета</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Длительность:</label>
+                            <input type="number" id="animDuration" value="2" min="0.1" step="0.1">
+                            <span>сек</span>
+                        </div>
+
+                        <div class="input-group">
+                            <label>Повторение:</label>
+                            <select id="animRepeat">
+                                <option value="1">1 раз</option>
+                                <option value="2">2 раза</option>
+                                <option value="5">5 раз</option>
+                                <option value="indefinite">Бесконечно</option>
+                            </select>
+                        </div>
+
+                        <div id="animParams">
+                            <!-- Параметры анимации будут меняться в зависимости от типа -->
+                        </div>
+
+                        <div class="animation-actions">
+                            <button class="btn" id="btnPreviewAnim">
+                                <i class="fas fa-play"></i> Просмотр
+                            </button>
+                            <button class="btn" id="btnApplyAnim">
+                                <i class="fas fa-check"></i> Применить
+                            </button>
+                            <button class="btn" id="btnRemoveAnim">
+                                <i class="fas fa-trash"></i> Удалить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Модальные окна -->
+        <div class="modal-overlay" id="modalOverlay" style="display: none;">
+            <div class="modal" id="exportModal">
+                <div class="modal-header">
+                    <h3><i class="fas fa-download"></i> Экспорт</h3>
+                    <button class="modal-close" id="closeExportModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group">
+                        <label>Формат:</label>
+                        <select id="exportFormat">
+                            <option value="svg">SVG (векторный)</option>
+                            <option value="png">PNG (растровый)</option>
+                            <option value="jpg">JPEG (растровый)</option>
+                            <option value="webp">WebP (растровый)</option>
+                            <option value="pdf">PDF</option>
+                            <option value="vdraw">VDRAW (проект)</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Качество (для JPEG):</label>
+                        <input type="range" id="exportQuality" min="1" max="100" value="90">
+                        <span id="exportQualityValue">90%</span>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Размер (для растровых):</label>
+                        <div class="input-row">
+                            <div class="input-col">
+                                <input type="number" id="exportWidth" value="800" min="10">
+                                <span>px</span>
+                            </div>
+                            <div class="input-col">
+                                <input type="number" id="exportHeight" value="600" min="10">
+                                <span>px</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Имя файла:</label>
+                        <input type="text" id="exportFilename" value="векторный-рисунок">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn" id="cancelExport">Отмена</button>
+                    <button class="btn btn-success" id="confirmExport">
+                        <i class="fas fa-download"></i> Экспортировать
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal" id="importModal">
+                <div class="modal-header">
+                    <h3><i class="fas fa-file-import"></i> Импорт</h3>
+                    <button class="modal-close" id="closeImportModal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="import-options">
+                        <div class="import-option active" data-type="svg">
+                            <i class="fas fa-file-code"></i>
+                            <span>SVG файл</span>
+                        </div>
+                        <div class="import-option" data-type="image">
+                            <i class="fas fa-image"></i>
+                            <span>Изображение</span>
+                        </div>
+                        <div class="import-option" data-type="vdraw">
+                            <i class="fas fa-project-diagram"></i>
+                            <span>Проект VDRAW</span>
+                        </div>
+                    </div>
+
+                    <div class="import-content" id="importContent">
+                        <!-- Контент импорта будет меняться -->
+                        <div class="import-section" id="importSvg">
+                            <p>Загрузите файл SVG:</p>
+                            <input type="file" id="importSvgFile" accept=".svg">
+                            <div class="import-warning" id="svgWarning"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn" id="cancelImport">Отмена</button>
+                    <button class="btn btn-primary" id="confirmImport">
+                        <i class="fas fa-file-import"></i> Импортировать
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal" id="gradientModal">
+                <!-- Модальное окно редактора градиентов -->
+            </div>
+
+            <div class="modal" id="textPathModal">
+                <!-- Модальное окно текста по пути -->
+            </div>
+        </div>
+
+        <!-- Контекстное меню -->
+        <div class="context-menu" id="contextMenu" style="display: none;">
+            <div class="context-item" data-action="cut">
+                <i class="fas fa-cut"></i> Вырезать
+            </div>
+            <div class="context-item" data-action="copy">
+                <i class="fas fa-copy"></i> Копировать
+            </div>
+            <div class="context-item" data-action="paste">
+                <i class="fas fa-paste"></i> Вставить
+            </div>
+            <hr>
+            <div class="context-item" data-action="duplicate">
+                <i class="fas fa-clone"></i> Дублировать
+            </div>
+            <div class="context-item" data-action="delete">
+                <i class="fas fa-trash"></i> Удалить
+            </div>
+            <hr>
+            <div class="context-item" data-action="bringToFront">
+                <i class="fas fa-arrow-up"></i> На передний план
+            </div>
+            <div class="context-item" data-action="sendToBack">
+                <i class="fas fa-arrow-down"></i> На задний план
+            </div>
+            <hr>
+            <div class="context-item" data-action="group">
+                <i class="fas fa-object-group"></i> Сгруппировать
+            </div>
+            <div class="context-item" data-action="ungroup">
+                <i class="fas fa-object-ungroup"></i> Разгруппировать
+            </div>
+        </div>
+    </div>
+    <script src="/static/js/vector-editor.js"></script>
+    <script src="/static/js/app.js"></script>
+
+</body>
+</html>
