@@ -5,7 +5,7 @@ from datetime import datetime
 
 
 from src.routes import canvas_routes, image_routes, \
-    transform_routes, filter_routes, head, api
+    transform_routes, filter_routes, vector_head, vector_api
 
 from src.three_d import scene_routes as three_d_routes
 

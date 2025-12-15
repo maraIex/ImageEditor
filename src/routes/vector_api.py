@@ -1,4 +1,3 @@
-# routes/api.py
 import base64
 import datetime
 import glob

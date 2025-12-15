@@ -8,7 +8,7 @@ head_bp = Blueprint('head', __name__)
 def index():
     return render_template('vector_editor.html')
 
-@head_bp.route('/editor')
+@head_bp.route('/vector_editor')
 def editor():
     return render_template('editor.html')
 
@@ -20,3 +20,4 @@ def projects():
 @head_bp.route('/static/<path:filename>')
 def static_files(filename):
     return send_from_directory('static', filename)
+
