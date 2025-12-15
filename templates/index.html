@@ -2,117 +2,97 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Image Editor — Minimal</title>
+    <title>OpenCV Paint Editor</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
-
 <body>
+    <!-- ========================= TOP BAR ========================= -->
+    <div id="top-bar">
+        <div class="group">
+            <input type="file" id="fileInput" accept="image/*">
 
-<div class="layout">
+            <!-- Выбор формата -->
+            <select id="exportFormat">
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+                <option value="tiff">TIFF</option>
+            </select>
+            <button onclick="exportImage()">💾 Сохранить</button>
 
-    <aside class="tools">
-
-        <h2>Редактор</h2>
-
-        <label class="block-label">Загрузить файл</label>
-        <input type="file" id="inputFile" accept="image/*">
-
-        <hr>
-
-        <label class="block-label">Изменение размера</label>
-        <input type="number" id="resizeW" placeholder="Ширина">
-        <input type="number" id="resizeH" placeholder="Высота">
-        <select id="interpolation">
-            <option value="INTER_NEAREST">Nearest</option>
-            <option value="INTER_LINEAR" selected>Linear</option>
-            <option value="INTER_CUBIC">Cubic</option>
-        </select>
-        <button class="btn" id="btnResize">Применить</button>
-
-        <hr>
-
-        <label class="block-label">Обрезка</label>
-        <input type="number" id="cropX" placeholder="x">
-        <input type="number" id="cropY" placeholder="y">
-        <input type="number" id="cropW" placeholder="ширина">
-        <input type="number" id="cropH" placeholder="высота">
-        <button class="btn" id="btnCrop">Обрезать</button>
-
-        <hr>
-
-        <label class="block-label">Поворот</label>
-        <input type="number" id="angle" placeholder="угол">
-        <input type="number" id="centerX" placeholder="центр X (опц.)">
-        <input type="number" id="centerY" placeholder="центр Y (опц.)">
-        <button class="btn" id="btnRotate">Повернуть</button>
-
-        <div class="row">
-            <button class="btn small" id="flipH">Х</button>
-            <button class="btn small" id="flipV">Y</button>
-            <button class="btn small" id="flipBoth">Оба</button>
+            <button onclick="undo()">↩ Отменить</button>
+            <button onclick="resetImage()">⟲ Сброс</button>
         </div>
 
-        <hr>
+        <div class="group collapsible">
+            <input type="number" id="rotateAngle" placeholder="Угол (°)">
+            <button onclick="rotateImage()">⟳ Повернуть</button>
+            <button onclick="flipHorizontal()">↔ Горизонтально</button>
+            <button onclick="flipVertical()">↕ Вертикально</button>
+            <button onclick="flipBoth()">⇋ Оба направления</button>
+        </div>
 
-        <label class="block-label">Яркость</label>
-        <input type="range" id="brightness" min="-100" max="100" value="0">
+        <div class="group collapsible">
+            <input type="number" id="resizeWidth" placeholder="Ширина (px)">
+            <input type="number" id="resizeHeight" placeholder="Высота (px)">
+            <select id="interpolation">
+                <option value="nearest">Ближайший сосед</option>
+                <option value="bilinear">Билинейная</option>
+                <option value="bicubic" selected>Бикубическая</option>
+            </select>
+            <button onclick="resizeImage()">Изменить размер</button>
+        </div>
 
-        <label class="block-label">Контраст</label>
-        <input type="range" id="contrast" min="0" max="3" step="0.01" value="1">
-        <button class="btn" id="btnBC">Применить</button>
+        <div class="group collapsible">
+            <label>Яркость</label>
+            <input type="range" id="brightness" min="-100" max="100" value="0" oninput="applyBrightnessContrast()">
+            <label>Контраст</label>
+            <input type="range" id="contrast" min="0.5" max="3" step="0.1" value="1" oninput="applyBrightnessContrast()">
+        </div>
 
-        <hr>
+        <div class="group collapsible">
+            <label>R</label>
+            <input type="range" id="r" min="-100" max="100" value="0" oninput="applyColorBalance()">
+            <label>G</label>
+            <input type="range" id="g" min="-100" max="100" value="0" oninput="applyColorBalance()">
+            <label>B</label>
+            <input type="range" id="b" min="-100" max="100" value="0" oninput="applyColorBalance()">
+        </div>
 
-        <label class="block-label">Цветовой баланс</label>
-        <input type="number" id="mulR" placeholder="R" value="1" step="0.1">
-        <input type="number" id="mulG" placeholder="G" value="1" step="0.1">
-        <input type="number" id="mulB" placeholder="B" value="1" step="0.1">
-        <button class="btn" id="btnColor">Применить</button>
+        <div class="group collapsible">
+            <label>Шум σ</label>
+            <input type="number" id="noise" value="10">
+            <button onclick="addGaussianNoise()">Добавить шум</button>
+            <label>Размытие</label>
+            <input type="number" id="blur" value="3">
+            <button onclick="applyBlur('average')">Среднее</button>
+            <button onclick="applyBlur('gaussian')">Гауссово</button>
+            <button onclick="applyBlur('median')">Медианное</button>
+        </div>
 
-        <hr>
+        <div class="group collapsible">
+            <input type="number" id="cropX" placeholder="X">
+            <input type="number" id="cropY" placeholder="Y">
+            <input type="number" id="cropW" placeholder="Ширина (px)">
+            <input type="number" id="cropH" placeholder="Высота (px)">
+            <button onclick="cropImage()">Обрезать</button>
+        </div>
 
-        <label class="block-label">Шум</label>
-        <select id="noiseType">
-            <option value="gaussian">Gaussian</option>
-            <option value="saltpepper">Salt & Pepper</option>
-        </select>
-        <input type="number" id="noiseAmount" step="0.01" value="0.05">
-        <button class="btn" id="btnNoise">Добавить</button>
+        <button id="toggle-ui" onclick="toggleUI()">☰</button>
+    </div>
 
-        <hr>
+    <!-- ========================= WORKSPACE ========================= -->
+    <div id="workspace-container">
+        <canvas id="canvas"></canvas>
+    </div>
 
-        <label class="block-label">Размытие</label>
-        <select id="blurType">
-            <option value="average">Average</option>
-            <option value="gaussian">Gaussian</option>
-            <option value="median">Median</option>
-        </select>
-        <input type="number" id="blurK" value="3">
-        <button class="btn" id="btnBlur">Размыть</button>
+    <!-- ========================= SIZE PANEL ========================= -->
+    <div id="zoom-panel">
+        <span id="canvas-size">0×0 px</span>
+    </div>
 
-        <hr>
-
-        <label class="block-label">Сохранить</label>
-        <input type="text" id="saveName" placeholder="имя файла" value="edited">
-        <select id="saveFormat">
-            <option value="jpg">JPEG</option>
-            <option value="png">PNG</option>
-            <option value="tiff">TIFF</option>
-        </select>
-        <input type="number" id="saveQuality" value="90">
-        <button class="btn success" id="btnSave">Сохранить</button>
-
-        <div id="saveLink"></div>
-
-    </aside>
-
-    <main class="preview">
-        <canvas id="preview"></canvas>
-        <div id="info"></div>
-    </main>
-
-</div>
-
-<script src="/static/js/editor.js"></script>
+    <!-- ========================= SCRIPTS ========================= -->
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/filters.js"></script>
+    <script src="/static/js/transform.js"></script>
 </body>
 </html>

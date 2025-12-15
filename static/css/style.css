@@ -1,91 +1,76 @@
+* {margin:0; padding:0; box-sizing:border-box;}
 body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #fafafa;
+    background:#1e1e1e;
+    color:#eee;
+    font-family:Arial,sans-serif;
+    height:150vh;
+    overflow:hidden;
 }
 
-.layout {
-    display: flex;
-    height: 100vh;
+/* ========================= TOP BAR ========================= */
+#top-bar {
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px;
+    padding:8px;
+    background:#2d2d2d;
+    border-bottom:1px solid #444;
+    margin-bottom: 10 px
 }
 
-.tools {
-    width: 260px;
-    padding: 15px;
-    background: #ffffff;
-    border-right: 1px solid #ddd;
-    overflow-y: auto;
+.group {
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-wrap:wrap;
 }
 
-.tools h2 {
-    margin-top: 0;
-    font-weight: 600;
+.collapsible {transition:opacity 0.3s ease;}
+button {
+    background:#3a3a3a;
+    color:#fff;
+    border:1px solid #555;
+    padding:6px 12px;
+    cursor:pointer;
 }
+button:hover {background:#555;}
+input[type="file"] {color:#ccc;}
+input[type="number"], input[type="range"], select {padding:4px;}
+#toggle-ui {margin-left:auto; font-size:18px;}
 
-.block-label {
-    margin-top: 10px;
-    font-size: 13px;
-    text-transform: uppercase;
-    color: #666;
-}
-
-input, select {
-    width: 100%;
-    padding: 6px;
-    margin: 4px 0;
-    border: 1px solid #ccc;
-    background: #fff;
-    border-radius: 4px;
-    font-size: 14px;
-}
-
-.row {
-    display: flex;
-    gap: 5px;
-}
-
-.btn {
-    width: 100%;
-    padding: 7px;
-    background: #eee;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    margin-top: 6px;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.btn:hover {
-    background: #ddd;
-}
-
-.btn.small {
-    width: 33%;
-}
-
-.btn.success {
-    background: #2ecc71;
-    border-color: #27ae60;
-    color: white;
-}
-
-.btn.success:hover {
-    background: #27ae60;
-}
-
-.preview {
-    flex: 1;
-    padding: 15px;
+/* ========================= WORKSPACE ========================= */
+#workspace-container {
+    width:100vw;
+    height:calc(100vh - 52px);
+    background:#111;
+    overflow:auto;
+    display:flex;
+    justify-content:center;
+    align-items:center;
 }
 
 canvas {
-    max-width: 100%;
-    border: 1px solid #ccc;
-    background: white;
+    background:#111;
+    border:1px solid #555;
+    display:block;
+    cursor:default;
 }
 
-#info {
-    margin-top: 10px;
-    color: #666;
-}
+/* ========================= MINIMAL UI ========================= */
+body.minimal .collapsible {display:none;}
 
+/* ========================= ZOOM PANEL ========================= */
+#zoom-panel {
+    position:fixed;
+    bottom:12px;
+    right:12px;
+    background:#2d2d2d;
+    padding:6px 12px;
+    border:1px solid #555;
+    border-radius:6px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:14px;
+}
