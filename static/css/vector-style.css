@@ -1,0 +1,727 @@
+/* Основные стили векторного редактора */
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2c3e50;
+    --success-color: #27ae60;
+    --danger-color: #e74c3c;
+    --warning-color: #f39c12;
+    --light-color: #ecf0f1;
+    --dark-color: #2c3e50;
+    --border-color: #bdc3c7;
+    --sidebar-width: 280px;
+    --header-height: 60px;
+    --status-height: 30px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f6fa;
+    color: #333;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Заголовок */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    height: var(--header-height);
+    background: var(--secondary-color);
+    color: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 100;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.header-left h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.project-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: #95a5a6;
+}
+
+.status {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.1);
+}
+
+.header-right {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-header {
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-header:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.btn-success {
+    background: var(--success-color);
+}
+
+.btn-success:hover {
+    background: #219653;
+}
+
+/* Основной макет */
+.main-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Боковые панели */
+.toolbar-left, .toolbar-right {
+    width: var(--sidebar-width);
+    background: white;
+    border-right: 1px solid var(--border-color);
+    overflow-y: auto;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.toolbar-right {
+    border-right: none;
+    border-left: 1px solid var(--border-color);
+}
+
+.tool-section {
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tool-section:last-child {
+    border-bottom: none;
+}
+
+.tool-section h3 {
+    font-size: 0.9rem;
+    color: var(--secondary-color);
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Сетка инструментов */
+.tool-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.tool-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 5px;
+    background: white;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.8rem;
+}
+
+.tool-btn:hover {
+    border-color: var(--primary-color);
+    background: #f8f9fa;
+}
+
+.tool-btn.active {
+    border-color: var(--primary-color);
+    background: #e3f2fd;
+    color: var(--primary-color);
+}
+
+.tool-btn i {
+    font-size: 1.2rem;
+}
+
+/* Элементы управления */
+.input-group {
+    margin-bottom: 12px;
+}
+
+.input-group label {
+    display: block;
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.input-group input[type="number"],
+.input-group input[type="text"],
+.input-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.input-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.input-col {
+    flex: 1;
+}
+
+/* Кнопки */
+.btn {
+    width: 100%;
+    padding: 10px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn:hover {
+    background: #2980b9;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+}
+
+.transform-controls {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.transform-controls .btn-sm {
+    flex: 1;
+}
+
+/* Область холста */
+.canvas-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.canvas-toolbar {
+    padding: 10px 15px;
+    background: white;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.history-controls,
+.zoom-controls,
+.align-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.history-info {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.canvas-container {
+    flex: 1;
+    position: relative;
+    overflow: auto;
+    background: #f8f9fa;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.canvas-grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+        linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+    pointer-events: none;
+}
+
+#svgCanvas {
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    background: white;
+}
+
+.canvas-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+/* Панель статуса */
+.status-bar {
+    height: var(--status-height);
+    background: var(--secondary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    padding: 0 15px;
+    font-size: 0.8rem;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 25px;
+}
+
+/* Вкладки свойств */
+.properties-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 15px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 10px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.tab-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.tab-content {
+    flex: 1;
+    overflow-y: auto;
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.property-group {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.property-group h4 {
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+    color: var(--secondary-color);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.input-group input[type="color"] {
+    width: 100%;
+    height: 40px;
+    padding: 3px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.input-group input[type="range"] {
+    width: 100%;
+}
+
+/* Слои */
+.layers-header {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.layers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.layer-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.layer-item:hover {
+    background: #e9ecef;
+}
+
+.layer-item.active {
+    background: #e3f2fd;
+    border-left: 3px solid var(--primary-color);
+}
+
+.layer-name {
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+/* Фильтры */
+.filter-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.filter-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 15px 10px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.filter-item:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+}
+
+.filter-item.active {
+    background: #e3f2fd;
+    border: 2px solid var(--primary-color);
+}
+
+/* Анимации */
+.animation-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.animation-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.animation-actions .btn {
+    flex: 1;
+}
+
+/* Модальные окна */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal {
+    background: white;
+    border-radius: 8px;
+    width: 500px;
+    max-width: 90%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
+}
+
+.modal-body {
+    padding: 20px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Импорт */
+.import-options {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.import-option {
+    flex: 1;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.import-option:hover {
+    border-color: var(--primary-color);
+}
+
+.import-option.active {
+    border-color: var(--primary-color);
+    background: #e3f2fd;
+}
+
+.import-option i {
+    font-size: 2rem;
+    color: var(--primary-color);
+}
+
+.import-warning {
+    margin-top: 10px;
+    padding: 10px;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    color: #856404;
+    font-size: 0.9rem;
+}
+
+/* Контекстное меню */
+.context-menu {
+    position: fixed;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    z-index: 1001;
+    min-width: 200px;
+}
+
+.context-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.2s;
+}
+
+.context-item:hover {
+    background: #f8f9fa;
+}
+
+.context-item hr {
+    margin: 5px 0;
+    border: none;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Редактор градиента */
+.gradient-editor {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    margin-top: 10px;
+}
+
+.gradient-preview {
+    width: 100%;
+    height: 40px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.gradient-stops {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.gradient-stop {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.gradient-stop.active {
+    border-color: var(--primary-color);
+}
+
+/* Адаптивность */
+@media (max-width: 1200px) {
+    :root {
+        --sidebar-width: 240px;
+    }
+}
+
+@media (max-width: 992px) {
+    .main-layout {
+        flex-direction: column;
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+        width: 100%;
+        height: 200px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .tool-section {
+        min-width: 200px;
+    }
+}
+
+/* Полосы прокрутки */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+/* vector-style.css (добавить в конец файла) */
+
+/* Стиль для элемента, который выбран (для курсора и базовых стилей) */
+.editor-element.selected-element {
+    cursor: move;
+}
+
+/* Стиль для визуальной рамки выделения (Bounding Box) */
+.selection-box {
+    fill: none !important;
+    stroke: var(--primary-color) !important; /* #3498db */
+    stroke-width: 2px; /* Настройка через JS (1 / zoomLevel) */
+    stroke-dasharray: 4 2;
+    pointer-events: none; /* Критично: позволяет кликать сквозь рамку */
+    vector-effect: non-scaling-stroke; /* Гарантирует, что stroke-width не масштабируется с элементом */
+}
+
+/* Стиль для прямоугольника выделения по области (Marquee Select) */
+#marqueeSelection {
+    fill: rgba(52, 152, 219, 0.1); /* Полупрозрачный синий */
+    stroke: var(--primary-color);
+    stroke-width: 1px;
+    stroke-dasharray: 2;
+    pointer-events: none; /* Критично */
+}
+
+/* Дополнительно: чтобы фон холста не мешал выбору */
+.canvas-bg {
+    pointer-events: bounding-box; /* Или auto, но не none */
+}

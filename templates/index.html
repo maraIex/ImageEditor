@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Онлайн графический редактор</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+<div class="container">
+    <!-- Панель инструментов -->
+    <div class="sidebar">
+
+        <h3>Загрузка изображения</h3>
+        <input type="file" id="uploadInput">
+        <button onclick="uploadImage()">Загрузить</button>
+        <button onclick="clearEditor()" style="background-color:#f44336;">
+            Новое изображение
+        </button>
+        <p id="message"></p>
+
+
+
+        <h3>Изменение размера</h3>
+        <input type="number" id="width" placeholder="Ширина">
+        <input type="number" id="height" placeholder="Высота">
+        <input type="number" id="scale" step="0.1" placeholder="Масштаб">
+        <button onclick="resizeImage()">Применить</button>
+
+        <h3>Вырезка изображения</h3>
+        <input type="number" id="cropX" placeholder="X">
+        <input type="number" id="cropY" placeholder="Y">
+        <input type="number" id="cropW" placeholder="Ширина">
+        <input type="number" id="cropH" placeholder="Высота">
+        <button onclick="cropImage()">Вырезать</button>
+
+        <h3>Отражение</h3>
+        <button onclick="flipImage('horizontal')">Горизонталь</button>
+        <button onclick="flipImage('vertical')">Вертикаль</button>
+        <button onclick="flipImage('both')">Обе оси</button>
+
+        <h3>Поворот</h3>
+        <input type="number" id="angle" placeholder="Угол">
+        <input type="number" id="centerX" placeholder="Центр X">
+        <input type="number" id="centerY" placeholder="Центр Y">
+        <button onclick="rotateImage()">Повернуть</button>
+
+        <h3>Яркость / Контраст</h3>
+        <label>Яркость</label>
+        <input type="range" id="brightness" min="-100" max="100" value="0">
+        <label>Контраст</label>
+        <input type="range" id="contrast" min="0.1" max="3" step="0.1" value="1">
+        <button onclick="applyBrightnessContrast()">Применить</button>
+
+        <h3>Цветовой баланс</h3>
+        <label>Красный</label>
+        <input type="range" id="red" min="-100" max="100" value="0">
+        <label>Зелёный</label>
+        <input type="range" id="green" min="-100" max="100" value="0">
+        <label>Синий</label>
+        <input type="range" id="blue" min="-100" max="100" value="0">
+        <button onclick="applyColorBalance()">Применить</button>
+
+        <h3>Шум</h3>
+        <button onclick="addGaussianNoise()">Гауссов</button>
+        <button onclick="addSPNoise()">Соль и перец</button>
+
+        <h3>Размытие</h3>
+        <button onclick="applyBlur('average')">Среднее</button>
+        <button onclick="applyBlur('gaussian')">Гауссово</button>
+        <button onclick="applyBlur('median')">Медианное</button>
+
+        <h3>Сохранение</h3>
+        <select id="format">
+            <option value="png">PNG</option>
+            <option value="jpg">JPEG</option>
+            <option value="tiff">TIFF</option>
+        </select>
+        <input type="range" id="quality" min="10" max="100" value="95">
+        <label>Качество (JPEG)</label>
+        <button onclick="saveImage()">Сохранить</button>
+        <p id="saveMessage"></p>
+    </div>
+
+    <!-- Панель превью -->
+    <div class="preview-panel">
+        <img id="preview" src="/uploads/placeholder.png" alt="Preview">
+    </div>
+</div>
+
+<script src="/static/js/main.js"></script>
+</body>
+</html>
