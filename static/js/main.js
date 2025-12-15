@@ -22,13 +22,9 @@ function loadToCanvas(base64) {
         if (image.height > 1000) {
             workspace.style.paddingTop = (image.height / 2) + "px";
             workspace.style.paddingBottom = (image.height / 10) + "px";
-            workspace.style.paddingLeft = (image.height / 20) + "px";
-            workspace.style.paddingRRight = (image.height / 20) + "px";
         } else {
             workspace.style.paddingTop = "0px";
             workspace.style.paddingBottom = "0px";
-            workspace.style.paddingLeft = "0px";
-            workspace.style.paddingRight = "0px";
         }
 
         drawCanvas();
