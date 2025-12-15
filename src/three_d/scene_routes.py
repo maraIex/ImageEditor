@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, send_from_directory
 import os
 
 from .scene_manager import SceneManager
-from .primitives import create_box, create_sphere, create_cylinder, create_cone, create_torus
+from .primitives import create_box, create_sphere, create_cylinder, create_cone
 
 bp = Blueprint('three_d', __name__, url_prefix='/api/3d')
 
@@ -40,8 +40,6 @@ def add_primitive():
             mesh = create_cylinder(radius=params.get('radius', 0.5), height=params.get('height', 1.0))
         elif ptype == 'cone':
             mesh = create_cone(radius=params.get('radius', 0.5), height=params.get('height', 1.0))
-        elif ptype == 'torus':
-            mesh = create_torus(radius=params.get('radius', 1.0), tube_radius=params.get('tube_radius', 0.25))
         else:
             return jsonify({'success': False, 'error': f'Unknown primitive type: {ptype}'}), 400
 
@@ -56,6 +54,25 @@ def add_primitive():
         return jsonify({'success': False, 'error': str(e)}), 404
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@bp.route('/delete', methods=['POST'])
+def delete_object():
+    data = request.json or {}
+    scene_id = data.get('scene_id')
+    object_id = data.get('object_id')
+
+    if not scene_id or not object_id:
+        return jsonify({'success': False, 'error': 'scene_id and object_id required'}), 400
+
+    try:
+        scene_manager.remove_object(scene_id, object_id)
+        return jsonify({'success': True, 'scene_url': f'/static/3d/scenes/{scene_id}.glb'})
+    except KeyError as e:
+        return jsonify({'success': False, 'error': str(e)}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @bp.route('/objects/<scene_id>', methods=['GET'])
 def list_objects(scene_id):

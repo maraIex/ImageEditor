@@ -66,6 +66,15 @@ class SceneManager:
         self._export_scene(scene_id)
         return obj_id, name
 
+    def remove_object(self, scene_id: str, object_id: str):
+        if scene_id not in self.scenes:
+            raise KeyError("Scene not found")
+        objs = self.scenes[scene_id]['objects']
+        if object_id not in objs:
+            raise KeyError("Object not found")
+        del objs[object_id]
+        self._export_scene(scene_id)
+
     def list_scenes(self):
         out = []
         for sid, data in self.scenes.items():
@@ -144,33 +153,27 @@ class SceneManager:
             raise KeyError("Scene not found")
         objs = self.scenes[scene_id]['objects']
         meshes = [o['mesh'] for o in objs.values() if isinstance(o.get('mesh'), trimesh.Trimesh)]
+
+        path = self.get_scene_file(scene_id)
+
         if not meshes:
             # пустая сцена => удаляем файл если есть
-            path = self.get_scene_file(scene_id)
-            try:
-                if os.path.exists(path):
-                    os.remove(path)
-            except Exception:
-                pass
+            if os.path.exists(path):
+                os.remove(path)
             return
-        try:
-            scene_trimesh = trimesh.util.concatenate(meshes)
-            file_bytes = scene_trimesh.export(file_type='glb')
-            path = self.get_scene_file(scene_id)
-            with open(path, 'wb') as f:
-                if isinstance(file_bytes, bytes):
-                    f.write(file_bytes)
-                else:
-                    f.write(file_bytes.encode('utf-8'))
-        except Exception:
-            # fallback через Scene
-            scene_scene = trimesh.Scene()
-            for i, m in enumerate(meshes):
-                scene_scene.add_geometry(m, node_name=f'obj_{i}')
-            file_bytes = scene_scene.export(file_type='glb')
-            path = self.get_scene_file(scene_id)
-            with open(path, 'wb') as f:
-                if isinstance(file_bytes, bytes):
-                    f.write(file_bytes)
-                else:
-                    f.write(file_bytes.encode('utf-8'))
+
+        # создаём Scene для любого количества объектов
+        scene_scene = trimesh.Scene()
+        for i, m in enumerate(meshes):
+            # node_name уникальный, чтобы не было пересечений
+            scene_scene.add_geometry(m.copy(), node_name=f'obj_{i}')
+
+        # экспортируем в glb
+        file_bytes = scene_scene.export(file_type='glb')
+        with open(path, 'wb') as f:
+            if isinstance(file_bytes, bytes):
+                f.write(file_bytes)
+            else:
+                f.write(file_bytes.encode('utf-8'))
+
+

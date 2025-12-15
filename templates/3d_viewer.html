@@ -27,37 +27,36 @@
     <h3>Сцена</h3>
     <div class="row">
       <div class="col"><button id="btnCreate" class="btn small">Создать сцену</button></div>
-      <div class="col"><button id="btnRefresh" class="btn small secondary">Refresh</button></div>
+      <div class="col"><button id="btnRefresh" class="btn small secondary">Обновить</button></div>
     </div>
     <label>Scene ID
       <input id="sceneId" type="text" placeholder="Сцена..." />
     </label>
 
-    <h3>Добавить примитив</h3>
+    <h3>Добавить фигуру</h3>
     <label>Тип
       <select id="primType">
         <option value="box">Box</option>
         <option value="sphere">Sphere</option>
         <option value="cylinder">Cylinder</option>
         <option value="cone">Cone</option>
-        <option value="torus">Torus</option>
       </select>
     </label>
 
     <div id="primParams">
       <!-- динамические параметры: size1/size2/size3 -->
-      <label>Param A (size1)
+      <label>Параметр A
         <input id="p1" type="number" step="0.1" value="1" />
       </label>
-      <label>Param B (size2)
+      <label>Параметр B
         <input id="p2" type="number" step="0.1" value="1" />
       </label>
-      <label>Param C (size3)
+      <label>Параметр C
         <input id="p3" type="number" step="0.1" value="1" />
       </label>
     </div>
 
-    <label>Position
+    <label>Позиция
       <div class="row">
         <input id="posX" type="number" class="col" step="0.1" value="0" />
         <input id="posY" type="number" class="col" step="0.1" value="0" />
@@ -71,15 +70,15 @@
       <select id="objList"></select>
     </label>
 
-    <label>Translate (dx,dy,dz)
+    <label>Перемещение
       <div class="row">
         <input id="dx" type="number" class="col" step="0.1" value="0" />
         <input id="dy" type="number" class="col" step="0.1" value="0" />
         <input id="dz" type="number" class="col" step="0.1" value="0" />
       </div>
       <div class="row">
-        <button id="btnTranslatePlus" class="btn small">Move +</button>
-        <button id="btnTranslateMinus" class="btn small secondary">Move −</button>
+        <button id="btnTranslatePlus" class="btn small">Переместить +</button>
+        <button id="btnTranslateMinus" class="btn small secondary">Переместить −</button>
       </div>
     </label>
 
@@ -87,8 +86,8 @@
       <div class="row">
         <input id="scale" type="number" class="col" step="0.01" value="1" />
         <select id="scaleMode" class="col">
-          <option value="uniform">Uniform</option>
-          <option value="axes">By axes</option>
+          <option value="uniform">Все</option>
+          <option value="axes">По оси</option>
         </select>
       </div>
       <div id="scaleAxes" style="display:none; margin-top:6px;">
@@ -96,10 +95,10 @@
         <input id="sy" type="number" step="0.01" value="1" placeholder="sy" />
         <input id="sz" type="number" step="0.01" value="1" placeholder="sz" />
       </div>
-      <button id="btnScale" class="btn">Apply Scale</button>
+      <button id="btnScale" class="btn">Применить</button>
     </label>
 
-    <label>Rotate
+    <label>Поворот
       <div class="row">
         <select id="rotAxis" class="col">
           <option value="0,0,1">Z</option>
@@ -108,10 +107,12 @@
         </select>
         <input id="angle" type="number" class="col" step="1" value="30" />
       </div>
-      <button id="btnRotate" class="btn">Rotate</button>
+      <button id="btnRotate" class="btn">Повернуть</button>
     </label>
 
-    <p class="hint">После действий нажимайте Refresh или дождитесь автоматического обновления модели.</p>
+    <button id="btnDelete" class="btn secondary">Удалить объект</button>
+
+    <p class="hint">После действий нажимайте "Обновить" или дождитесь автоматического обновления модели.</p>
   </div>
 
   <div id="viewer">
@@ -145,20 +146,28 @@
   const rotAxis = document.getElementById('rotAxis'), angle = document.getElementById('angle'), btnRotate = document.getElementById('btnRotate');
 
   function showSceneGLB(scene_id) {
-    const url = `/static/3d/scenes/${scene_id}.glb`;
-    // check existence via fetch (lightweight) to provide feedback
-    fetch(url, { method: 'HEAD' }).then(res => {
-      if (res.ok) {
-        mv.src = url + '?t=' + Date.now();
-      } else {
-        // нет файла — убираем src и показываем подсказку
+    const url = `/static/3d/scenes/${scene_id}.glb?t=` + Date.now();
+
+    // сначала убираем старую модель
+    mv.removeAttribute('src');
+    mv.poster = '';
+
+    // проверяем, есть ли файл
+    fetch(url, { method: 'HEAD' })
+      .then(res => {
+        if (res.ok) {
+          // файл есть — устанавливаем src с таймстампом
+          mv.src = url;
+        } else {
+          // файла нет — ничего не показываем
+          mv.removeAttribute('src');
+          mv.poster = '';
+        }
+      })
+      .catch(() => {
         mv.removeAttribute('src');
         mv.poster = '';
-      }
-    }).catch(() => {
-      mv.removeAttribute('src');
-      mv.poster = '';
-    });
+      });
   }
 
   btnCreate.onclick = async () => {
@@ -352,6 +361,31 @@
     loadObjects(params.get('scene_id'));
     showSceneGLB(params.get('scene_id'));
   }
+
+  const btnDelete = document.getElementById('btnDelete');
+
+btnDelete.onclick = async () => {
+  const sid = sceneIdInput.value.trim();
+  const oid = objList.value;
+  if (!sid || !oid) return alert('Укажите сцену и объект');
+
+  if (!confirm('Удалить выбранный объект?')) return;
+
+  const res = await fetch('/api/3d/delete', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({scene_id: sid, object_id: oid})
+  });
+  const data = await res.json();
+  if (data.success) {
+    await loadObjects(sid);
+    // принудительное обновление модели
+    showSceneGLB(sid);
+  } else {
+    alert('Ошибка: ' + (data.error || 'unknown'));
+  }
+};
+
 </script>
 </body>
 </html>
