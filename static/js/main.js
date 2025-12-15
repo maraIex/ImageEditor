@@ -57,19 +57,6 @@ canvas.addEventListener("mousemove", e => {
     const offsetY = (canvas.height - image.height) / 2;
     const margin = 10;
 
-    // ПЕРЕМЕЩЕНИЕ
-    if (isDragging) {
-        const dx = mx - dragOffsetX;
-        const dy = my - dragOffsetY;
-        dragOffsetX = mx;
-        dragOffsetY = my;
-
-        // Сдвигаем картинку
-        drawCanvas();
-        ctx.drawImage(image, offsetX + dx, offsetY + dy, image.width, image.height);
-        return;
-    }
-
     // РАСТЯЖЕНИЕ
     if (isResizing) {
         const dx = mx - dragOffsetX;
@@ -146,7 +133,6 @@ canvas.addEventListener("mousedown", e => {
         dragOffsetY = my;
     } else if (mx >= offsetX && mx <= offsetX + image.width &&
                my >= offsetY && my <= offsetY + image.height) {
-        isDragging = true;
         dragOffsetX = mx;
         dragOffsetY = my;
     }
