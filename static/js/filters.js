@@ -26,12 +26,14 @@ function addGaussianNoise() {
 }
 
 function applyBlur(type) {
+    let ksize = parseInt(document.getElementById("blur").value);
+    if (!ksize || ksize < 3) ksize = 3;
+    if (ksize % 2 === 0) ksize += 1; // делаем нечётным
+
     fetch("/filter/blur", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            type: type,
-            ksize: parseInt(document.getElementById("blur").value)
-        })
+        body: JSON.stringify({ type: type, ksize: ksize })
     }).then(() => reloadImage());
 }
+

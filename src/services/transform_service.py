@@ -1,5 +1,8 @@
 import cv2
 
+from src.models.project_model import ProjectModel
+from src.services.history_manager import HistoryManager
+from src.utils.file_utils import ensure_directory
 from src.utils.image_utils import save_image
 
 
@@ -92,3 +95,13 @@ class TransformService:
             raise ValueError("Неверные координаты обрезки")
 
         save_image(self.project.current_path, cropped)
+
+UPLOAD_DIR = "uploads"
+
+ensure_directory(UPLOAD_DIR)
+
+# ===================== PROJECT & HISTORY =====================
+project = ProjectModel(UPLOAD_DIR)
+history = HistoryManager(project)
+
+transform_service = TransformService(project, history)

@@ -1,8 +1,9 @@
 import cv2
 import numpy as np
 
+from src.services.history_manager import HistoryManager
 from src.utils.image_utils import save_image, decode_image
-from src.utils.file_utils import copy_file
+from src.utils.file_utils import copy_file, ensure_directory
 from src.models.project_model import ProjectModel
 
 
@@ -69,6 +70,11 @@ class FilterService:
         self._backup()
         img = self._load_original()
 
+        # корректируем ksize
+        ksize = max(3, int(ksize))  # минимум 3
+        if ksize % 2 == 0:
+            ksize += 1  # делаем нечётным
+
         if blur_type == "average":
             result = cv2.blur(img, (ksize, ksize))
         elif blur_type == "gaussian":
@@ -76,7 +82,7 @@ class FilterService:
         elif blur_type == "median":
             result = cv2.medianBlur(img, ksize)
         else:
-            raise ValueError(f"Неизвестный тип размытия: {blur_type}")
+            raise ValueError("Неизвестный тип размытия")
 
         save_image(self.project.current_path, result)
 
@@ -94,3 +100,13 @@ class FilterService:
 
         result = cv2.merge([b_ch, g_ch, r_ch])
         save_image(self.project.current_path, result)
+
+UPLOAD_DIR = "uploads"
+
+ensure_directory(UPLOAD_DIR)
+
+# ===================== PROJECT & HISTORY =====================
+project = ProjectModel(UPLOAD_DIR)
+history = HistoryManager(project)
+
+filter_service = FilterService(project, history)

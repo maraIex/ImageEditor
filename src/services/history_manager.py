@@ -56,17 +56,3 @@ class HistoryManager:
 
         copy_file(src, self.project.current_path)
         os.remove(src)
-
-    # ===================== ОЧИСТКА =====================
-
-    def clear(self):
-        """
-        Полностью очищает историю.
-        """
-        if not os.path.exists(self.project.history_dir):
-            return
-
-        for f in os.listdir(self.project.history_dir):
-            path = os.path.join(self.project.history_dir, f)
-            if os.path.isfile(path):
-                os.remove(path)

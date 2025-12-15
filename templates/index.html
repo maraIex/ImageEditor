@@ -10,29 +10,36 @@
     <div id="top-bar">
         <div class="group">
             <input type="file" id="fileInput" accept="image/*">
-            <button onclick="exportImage()">💾 Сохранить</button>
-            <button onclick="undo()">↩ Undo</button>
-            <button onclick="resetImage()">⟲ Reset</button>
-            <button onclick="clearCanvas()">✖ Очистить</button>
-        </div>
 
-        <div class="group collapsible">
-            <input type="number" id="rotateAngle" placeholder="Угол">
-            <button onclick="rotateImage()">⟳ Повернуть</button>
-            <button onclick="flipHorizontal()">↔ Горизонталь</button>
-            <button onclick="flipVertical()">↕ Вертикаль</button>
-            <button onclick="flipBoth()">⇋ Оба</button>
-        </div>
-
-        <div class="group collapsible">
-            <input type="number" id="resizeWidth" placeholder="Ширина">
-            <input type="number" id="resizeHeight" placeholder="Высота">
-            <select id="interpolation">
-                <option value="nearest">Nearest</option>
-                <option value="bilinear">Bilinear</option>
-                <option value="bicubic" selected>Bicubic</option>
+            <!-- Выбор формата -->
+            <select id="exportFormat">
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+                <option value="tiff">TIFF</option>
             </select>
-            <button onclick="resizeImage()">Resize</button>
+            <button onclick="exportImage()">💾 Сохранить</button>
+
+            <button onclick="undo()">↩ Отменить</button>
+            <button onclick="resetImage()">⟲ Сброс</button>
+        </div>
+
+        <div class="group collapsible">
+            <input type="number" id="rotateAngle" placeholder="Угол (°)">
+            <button onclick="rotateImage()">⟳ Повернуть</button>
+            <button onclick="flipHorizontal()">↔ Горизонтально</button>
+            <button onclick="flipVertical()">↕ Вертикально</button>
+            <button onclick="flipBoth()">⇋ Оба направления</button>
+        </div>
+
+        <div class="group collapsible">
+            <input type="number" id="resizeWidth" placeholder="Ширина (px)">
+            <input type="number" id="resizeHeight" placeholder="Высота (px)">
+            <select id="interpolation">
+                <option value="nearest">Ближайший сосед</option>
+                <option value="bilinear">Билинейная</option>
+                <option value="bicubic" selected>Бикубическая</option>
+            </select>
+            <button onclick="resizeImage()">Изменить размер</button>
         </div>
 
         <div class="group collapsible">
@@ -52,21 +59,21 @@
         </div>
 
         <div class="group collapsible">
-            <label>Noise σ</label>
+            <label>Шум σ</label>
             <input type="number" id="noise" value="10">
-            <button onclick="addGaussianNoise()">Add Noise</button>
-            <label>Blur ksize</label>
+            <button onclick="addGaussianNoise()">Добавить шум</button>
+            <label>Размытие</label>
             <input type="number" id="blur" value="3">
-            <button onclick="applyBlur('average')">Average</button>
-            <button onclick="applyBlur('gaussian')">Gaussian</button>
-            <button onclick="applyBlur('median')">Median</button>
+            <button onclick="applyBlur('average')">Среднее</button>
+            <button onclick="applyBlur('gaussian')">Гауссово</button>
+            <button onclick="applyBlur('median')">Медианное</button>
         </div>
 
         <div class="group collapsible">
             <input type="number" id="cropX" placeholder="X">
             <input type="number" id="cropY" placeholder="Y">
-            <input type="number" id="cropW" placeholder="Ширина">
-            <input type="number" id="cropH" placeholder="Высота">
+            <input type="number" id="cropW" placeholder="Ширина (px)">
+            <input type="number" id="cropH" placeholder="Высота (px)">
             <button onclick="cropImage()">Обрезать</button>
         </div>
 
@@ -80,9 +87,10 @@
 
     <!-- ========================= SIZE PANEL ========================= -->
     <div id="zoom-panel">
-        <span id="canvas-size">0x0 px</span>
+        <span id="canvas-size">0×0 px</span>
     </div>
 
+    <!-- ========================= SCRIPTS ========================= -->
     <script src="/static/js/main.js"></script>
     <script src="/static/js/filters.js"></script>
     <script src="/static/js/transform.js"></script>

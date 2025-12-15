@@ -174,7 +174,12 @@ document.getElementById("fileInput").addEventListener("change", e => {
 });
 
 // ===================== СОХРАНЕНИЕ =====================
-function exportImage() { window.location.href = "/export?format=png"; }
+function exportImage() {
+    const format = document.getElementById("exportFormat").value;
+    if (!format) return;
+    window.location.href = `/export?format=${format}`;
+}
+
 
 // ===================== UI =====================
 function toggleUI() { document.body.classList.toggle("minimal"); }
@@ -187,4 +192,3 @@ function updateCanvasInfo() {
 // ===================== UNDO / RESET / CLEAR =====================
 function undo() { fetch("/undo", { method: "POST" }).then(() => reloadImage()); }
 function resetImage() { fetch("/reset", { method: "POST" }).then(() => reloadImage()); }
-function clearCanvas() { fetch("/clear", { method: "POST" }).then(() => reloadImage()); }
