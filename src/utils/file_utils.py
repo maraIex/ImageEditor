@@ -15,7 +15,3 @@ def clear_directory(path: str):
         return
     for f in os.listdir(path):
         os.remove(os.path.join(path, f))
-
-def delete_file(path: str):
-    if os.path.exists(path):
-        os.remove(path)

@@ -1,0 +1,241 @@
+<!-- templates/projects.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои проекты - Векторный редактор</title>
+    <link rel="stylesheet" href="/static/css/projects.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <h1><i class="fas fa-project-diagram"></i> Мои проекты</h1>
+                <nav>
+                    <a href="/" class="nav-link"><i class="fas fa-home"></i> Главная</a>
+                    <a href="/editor" class="nav-link"><i class="fas fa-plus"></i> Новый проект</a>
+                    <button id="refresh-projects" class="btn-icon" title="Обновить список">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </nav>
+            </div>
+        </header>
+
+        <main>
+            <!-- Фильтры и поиск -->
+            <div class="filters-section">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-projects" placeholder="Поиск проектов...">
+                </div>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">Все</button>
+                    <button class="filter-btn" data-filter="recent">Недавние</button>
+                    <button class="filter-btn" data-filter="favorites">Избранные</button>
+                    <button class="filter-btn" data-filter="archived">Архив</button>
+                </div>
+            </div>
+
+            <!-- Сетка проектов -->
+            <div class="projects-grid" id="projects-container">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Загрузка проектов...</p>
+                </div>
+            </div>
+
+            <!-- Кнопка создания нового проекта -->
+            <div class="create-new-section">
+                <div class="create-card" id="create-new-project">
+                    <div class="create-icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <h3>Создать новый проект</h3>
+                    <p>Начните с чистого холста</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Статистика -->
+        <div class="stats-section">
+            <div class="stat-card">
+                <i class="fas fa-layer-group"></i>
+                <h3 id="total-projects">0</h3>
+                <p>Всего проектов</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-clock"></i>
+                <h3 id="recent-projects">0</h3>
+                <p>За последнюю неделю</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-hdd"></i>
+                <h3 id="total-size">0 MB</h3>
+                <p>Общий размер</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно создания проекта -->
+    <div id="create-project-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Создать новый проект</h2>
+            <form id="create-project-form">
+                <div class="form-group">
+                    <label for="project-name">Название проекта</label>
+                    <input type="text" id="project-name" placeholder="Мой векторный дизайн" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="project-width">Ширина</label>
+                    <div class="dimension-input">
+                        <input type="number" id="project-width" value="800" min="100" max="5000" required>
+                        <select id="width-unit">
+                            <option value="px">px</option>
+                            <option value="mm">mm</option>
+                            <option value="cm">cm</option>
+                            <option value="in">in</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="project-height">Высота</label>
+                    <div class="dimension-input">
+                        <input type="number" id="project-height" value="600" min="100" max="5000" required>
+                        <select id="height-unit">
+                            <option value="px">px</option>
+                            <option value="mm">mm</option>
+                            <option value="cm">cm</option>
+                            <option value="in">in</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="project-template">Шаблон</label>
+                    <select id="project-template">
+                        <option value="blank">Пустой холст</option>
+                        <option value="web-banner">Веб-баннер (728x90)</option>
+                        <option value="social-media">Соц. сеть (1200x630)</option>
+                        <option value="mobile-screen">Мобильный экран (375x667)</option>
+                        <option value="desktop">Десктоп (1920x1080)</option>
+                        <option value="print-a4">Печать А4 (210x297mm)</option>
+                        <option value="print-card">Визитная карточка (85x55mm)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="project-color">Цвет фона</label>
+                    <input type="color" id="project-color" value="#ffffff">
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary close-modal">Отмена</button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-plus"></i> Создать проект
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно информации о проекте -->
+    <div id="project-info-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-project-title">Информация о проекте</h2>
+            <div class="project-info-content">
+                <div class="info-section">
+                    <h3>Детали</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Размер:</span>
+                            <span id="info-size" class="info-value">800x600 px</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Создан:</span>
+                            <span id="info-created" class="info-value">01.01.2024</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Изменен:</span>
+                            <span id="info-modified" class="info-value">01.01.2024</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Слоев:</span>
+                            <span id="info-layers" class="info-value">1</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Файл:</span>
+                            <span id="info-filename" class="info-value">project.json</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Размер файла:</span>
+                            <span id="info-filesize" class="info-value">2.4 KB</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-section">
+                    <h3>Действия</h3>
+                    <div class="action-buttons">
+                        <button id="btn-open-project" class="btn-action">
+                            <i class="fas fa-edit"></i> Открыть для редактирования
+                        </button>
+                        <button id="btn-duplicate-project" class="btn-action">
+                            <i class="fas fa-copy"></i> Создать копию
+                        </button>
+                        <button id="btn-export-project" class="btn-action">
+                            <i class="fas fa-download"></i> Экспортировать
+                        </button>
+                        <button id="btn-delete-project" class="btn-action btn-danger">
+                            <i class="fas fa-trash"></i> Удалить проект
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно импорта -->
+    <div id="import-project-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Импорт проекта</h2>
+            <div class="import-options">
+                <div class="import-option">
+                    <h3><i class="fas fa-file-import"></i> Импорт SVG</h3>
+                    <p>Загрузите файл .svg для редактирования</p>
+                    <input type="file" id="import-svg-file" accept=".svg" class="file-input">
+                    <button id="btn-import-svg" class="btn-secondary">
+                        <i class="fas fa-upload"></i> Загрузить SVG
+                    </button>
+                </div>
+
+                <div class="import-option">
+                    <h3><i class="fas fa-file-code"></i> Импорт .vdraw</h3>
+                    <p>Загрузите сохраненный проект в формате .vdraw</p>
+                    <input type="file" id="import-vdraw-file" accept=".vdraw,.json" class="file-input">
+                    <button id="btn-import-vdraw" class="btn-secondary">
+                        <i class="fas fa-upload"></i> Загрузить проект
+                    </button>
+                </div>
+
+                <div class="import-option">
+                    <h3><i class="fas fa-image"></i> Изображение в вектор</h3>
+                    <p>Конвертируйте растровое изображение в вектор</p>
+                    <input type="file" id="import-image-file" accept=".png,.jpg,.jpeg,.webp" class="file-input">
+                    <button id="btn-trace-image" class="btn-secondary">
+                        <i class="fas fa-vector-square"></i> Трассировать
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/projects.js"></script>
+</body>
+</html>
