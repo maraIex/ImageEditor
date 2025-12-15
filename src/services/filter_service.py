@@ -1,139 +1,112 @@
-"""
-Сервис для работы с фильтрами SVG
-"""
-from typing import Dict, Tuple
-import uuid
+import cv2
+import numpy as np
+
+from src.services.history_manager import HistoryManager
+from src.utils.image_utils import save_image, decode_image
+from src.utils.file_utils import copy_file, ensure_directory
+from src.models.project_model import ProjectModel
 
 
 class FilterService:
-    """Сервис для создания SVG фильтров"""
+    """
+    Применение фильтров к изображению.
+    Все изменения записываются в историю.
+    """
 
-    @staticmethod
-    def create_filter(filter_type: str, params: Dict, filter_id: str = None) -> Tuple[str, str]:
-        """Создание фильтра SVG"""
-        if not filter_id:
-            filter_id = f'filter_{uuid.uuid4().hex[:8]}'
+    def __init__(self, project, history):
+        self.project = project
+        self.history = history
 
-        filter_svg = ''
+    # ===================== ВНУТРЕННИЕ =====================
 
-        if filter_type == 'blur':
-            std_dev = params.get('stdDeviation', 2)
-            filter_svg = f'''
-            <filter id="{filter_id}">
-                <feGaussianBlur stdDeviation="{std_dev}"/>
-            </filter>
-            '''
+    def _backup(self):
+        """
+        Сохраняем текущее состояние в историю.
+        """
+        if self.project.has_current():
+            self.history.push()
 
-        elif filter_type == 'shadow':
-            dx = params.get('dx', 2)
-            dy = params.get('dy', 2)
-            std_dev = params.get('stdDeviation', 2)
-            color = params.get('color', '#000000')
-            opacity = params.get('opacity', 0.5)
+    def _load_original(self):
+        """
+        Загружаем оригинальное изображение.
+        """
+        if not self.project.has_original():
+            raise ValueError("Нет оригинального изображения")
+        return cv2.imread(self.project.original_path)
 
-            filter_svg = f'''
-            <filter id="{filter_id}">
-                <feDropShadow dx="{dx}" dy="{dy}" stdDeviation="{std_dev}" 
-                             flood-color="{color}" flood-opacity="{opacity}"/>
-            </filter>
-            '''
+    # ===================== BRIGHTNESS / CONTRAST =====================
 
-        elif filter_type == 'glow':
-            std_dev = params.get('stdDeviation', 5)
-            color = params.get('color', '#00ff00')
+    def brightness_contrast(self, brightness: int, contrast: float):
+        self._backup()
+        img = self._load_original()
+        result = cv2.convertScaleAbs(img, alpha=contrast, beta=brightness)
+        save_image(self.project.current_path, result)
 
-            filter_svg = f'''
-            <filter id="{filter_id}">
-                <feGaussianBlur stdDeviation="{std_dev}" result="coloredBlur"/>
-                <feMerge>
-                    <feMergeNode in="coloredBlur"/>
-                    <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-            </filter>
-            '''
+    # ===================== COLOR BALANCE =====================
 
-        elif filter_type == 'emboss':
-            filter_svg = f'''
-            <filter id="{filter_id}">
-                <feConvolveMatrix kernelMatrix="1 0 0 0 0 0 0 0 -1" 
-                                 divisor="1" preserveAlpha="true"/>
-            </filter>
-            '''
+    def color_balance(self, r: int, g: int, b: int):
+        self._backup()
+        img = self._load_original()
+        b_ch, g_ch, r_ch = cv2.split(img)
+        r_ch = cv2.add(r_ch, r)
+        g_ch = cv2.add(g_ch, g)
+        b_ch = cv2.add(b_ch, b)
+        result = cv2.merge([b_ch, g_ch, r_ch])
+        save_image(self.project.current_path, result)
 
-        elif filter_type == 'invert':
-            filter_svg = f'''
-            <filter id="{filter_id}">
-                <feColorMatrix type="matrix"
-                    values="-1 0 0 0 1
-                            0 -1 0 0 1
-                            0 0 -1 0 1
-                            0 0 0 1 0"/>
-            </filter>
-            '''
+    # ===================== GAUSSIAN NOISE =====================
 
-        elif filter_type == 'neon':
-            filter_svg = f'''
-            <filter id="{filter_id}">
-                <feFlood flood-color="#00ffff" result="flood"/>
-                <feComposite in="flood" in2="SourceGraphic" operator="in" result="mask"/>
-                <feMorphology in="mask" operator="dilate" radius="2"/>
-                <feGaussianBlur stdDeviation="5"/>
-                <feMerge>
-                    <feMergeNode/>
-                    <feMergeNode in="SourceGraphic"/>
-                </feMerge>
-            </filter>
-            '''
+    def add_gaussian_noise(self, sigma: float):
+        self._backup()
+        img = self._load_original()
+        noise = np.random.normal(0, sigma, img.shape).astype(np.float32)
+        noisy = cv2.add(img.astype(np.float32), noise)
+        noisy = np.clip(noisy, 0, 255).astype(np.uint8)
+        save_image(self.project.current_path, noisy)
 
-        return filter_svg.strip(), filter_id
+    # ===================== BLUR =====================
 
-    @staticmethod
-    def get_filter_info(filter_type: str = None) -> Dict:
-        """Получение информации о фильтрах"""
-        all_filters = {
-            'blur': {
-                'name': 'Размытие',
-                'description': 'Добавляет размытие элементам',
-                'params': [
-                    {'name': 'stdDeviation', 'type': 'number', 'default': 2, 'min': 0, 'max': 20}
-                ]
-            },
-            'shadow': {
-                'name': 'Тень',
-                'description': 'Добавляет тень элементам',
-                'params': [
-                    {'name': 'dx', 'type': 'number', 'default': 2, 'min': -20, 'max': 20},
-                    {'name': 'dy', 'type': 'number', 'default': 2, 'min': -20, 'max': 20},
-                    {'name': 'stdDeviation', 'type': 'number', 'default': 2, 'min': 0, 'max': 10},
-                    {'name': 'color', 'type': 'color', 'default': '#000000'},
-                    {'name': 'opacity', 'type': 'number', 'default': 0.5, 'min': 0, 'max': 1, 'step': 0.1}
-                ]
-            },
-            'glow': {
-                'name': 'Свечение',
-                'description': 'Добавляет свечение элементам',
-                'params': [
-                    {'name': 'stdDeviation', 'type': 'number', 'default': 5, 'min': 0, 'max': 20},
-                    {'name': 'color', 'type': 'color', 'default': '#00ff00'}
-                ]
-            },
-            'emboss': {
-                'name': 'Рельеф',
-                'description': 'Создает рельефный эффект',
-                'params': []
-            },
-            'invert': {
-                'name': 'Инверсия',
-                'description': 'Инвертирует цвета',
-                'params': []
-            },
-            'neon': {
-                'name': 'Неоновый',
-                'description': 'Создает неоновое свечение',
-                'params': []
-            }
-        }
+    def blur(self, blur_type: str, ksize: int):
+        self._backup()
+        img = self._load_original()
 
-        if filter_type:
-            return all_filters.get(filter_type, {})
-        return all_filters
+        # корректируем ksize
+        ksize = max(3, int(ksize))  # минимум 3
+        if ksize % 2 == 0:
+            ksize += 1  # делаем нечётным
+
+        if blur_type == "average":
+            result = cv2.blur(img, (ksize, ksize))
+        elif blur_type == "gaussian":
+            result = cv2.GaussianBlur(img, (ksize, ksize), 0)
+        elif blur_type == "median":
+            result = cv2.medianBlur(img, ksize)
+        else:
+            raise ValueError("Неизвестный тип размытия")
+
+        save_image(self.project.current_path, result)
+
+    # ===================== BRIGHTNESS + RGB =====================
+
+    def brightness_contrast_rgb(self, brightness: int, contrast: float, r: int, g: int, b: int):
+        self._backup()
+        img = self._load_original()
+        img_bc = cv2.convertScaleAbs(img, alpha=contrast, beta=brightness)
+
+        b_ch, g_ch, r_ch = cv2.split(img_bc)
+        r_ch = cv2.add(r_ch, r)
+        g_ch = cv2.add(g_ch, g)
+        b_ch = cv2.add(b_ch, b)
+
+        result = cv2.merge([b_ch, g_ch, r_ch])
+        save_image(self.project.current_path, result)
+
+UPLOAD_DIR = "uploads"
+
+ensure_directory(UPLOAD_DIR)
+
+# ===================== PROJECT & HISTORY =====================
+project = ProjectModel(UPLOAD_DIR)
+history = HistoryManager(project)
+
+filter_service = FilterService(project, history)

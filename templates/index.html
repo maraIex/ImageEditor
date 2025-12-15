@@ -2,91 +2,98 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Онлайн графический редактор</title>
+    <title>OpenCV Paint Editor</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-<div class="container">
-    <!-- Панель инструментов -->
-    <div class="sidebar">
+    <!-- ========================= TOP BAR ========================= -->
+    <div id="top-bar">
+        <div class="group">
+            <input type="file" id="fileInput" accept="image/*">
 
-        <h3>Загрузка изображения</h3>
-        <input type="file" id="uploadInput">
-        <button onclick="uploadImage()">Загрузить</button>
-        <button onclick="clearEditor()" style="background-color:#f44336;">
-            Новое изображение
-        </button>
-        <p id="message"></p>
+            <!-- Выбор формата -->
+            <select id="exportFormat">
+                <option value="png">PNG</option>
+                <option value="jpg">JPG</option>
+                <option value="tiff">TIFF</option>
+            </select>
+            <button onclick="exportImage()">💾 Сохранить</button>
 
+            <button onclick="undo()">↩ Отменить</button>
+            <button onclick="resetImage()">⟲ Сброс</button>
+        </div>
 
+        <div class="group collapsible">
+            <input type="number" id="rotateAngle" placeholder="Угол (°)">
+            <button onclick="rotateImage()">⟳ Повернуть</button>
+            <button onclick="flipHorizontal()">↔ Горизонтально</button>
+            <button onclick="flipVertical()">↕ Вертикально</button>
+            <button onclick="flipBoth()">⇋ Оба направления</button>
+        </div>
 
-        <h3>Изменение размера</h3>
-        <input type="number" id="width" placeholder="Ширина">
-        <input type="number" id="height" placeholder="Высота">
-        <input type="number" id="scale" step="0.1" placeholder="Масштаб">
-        <button onclick="resizeImage()">Применить</button>
+        <div class="group collapsible">
+            <input type="number" id="resizeWidth" placeholder="Ширина (px)">
+            <input type="number" id="resizeHeight" placeholder="Высота (px)">
+            <select id="interpolation">
+                <option value="nearest">Ближайший сосед</option>
+                <option value="bilinear">Билинейная</option>
+                <option value="bicubic" selected>Бикубическая</option>
+            </select>
+            <button onclick="resizeImage()">Изменить размер</button>
+        </div>
 
-        <h3>Вырезка изображения</h3>
-        <input type="number" id="cropX" placeholder="X">
-        <input type="number" id="cropY" placeholder="Y">
-        <input type="number" id="cropW" placeholder="Ширина">
-        <input type="number" id="cropH" placeholder="Высота">
-        <button onclick="cropImage()">Вырезать</button>
+        <div class="group collapsible">
+            <label>Яркость</label>
+            <input type="range" id="brightness" min="-100" max="100" value="0" oninput="applyBrightnessContrast()">
+            <label>Контраст</label>
+            <input type="range" id="contrast" min="0.5" max="3" step="0.1" value="1" oninput="applyBrightnessContrast()">
+        </div>
 
-        <h3>Отражение</h3>
-        <button onclick="flipImage('horizontal')">Горизонталь</button>
-        <button onclick="flipImage('vertical')">Вертикаль</button>
-        <button onclick="flipImage('both')">Обе оси</button>
+        <div class="group collapsible">
+            <label>R</label>
+            <input type="range" id="r" min="-100" max="100" value="0" oninput="applyColorBalance()">
+            <label>G</label>
+            <input type="range" id="g" min="-100" max="100" value="0" oninput="applyColorBalance()">
+            <label>B</label>
+            <input type="range" id="b" min="-100" max="100" value="0" oninput="applyColorBalance()">
+        </div>
 
-        <h3>Поворот</h3>
-        <input type="number" id="angle" placeholder="Угол">
-        <input type="number" id="centerX" placeholder="Центр X">
-        <input type="number" id="centerY" placeholder="Центр Y">
-        <button onclick="rotateImage()">Повернуть</button>
+        <div class="group collapsible">
+            <label>Шум σ</label>
+            <input type="number" id="noise" value="10">
+            <button onclick="addGaussianNoise()">Добавить шум</button>
+            <label>Размытие</label>
+            <input type="number" id="blur" value="3">
+            <button onclick="applyBlur('average')">Среднее</button>
+            <button onclick="applyBlur('gaussian')">Гауссово</button>
+            <button onclick="applyBlur('median')">Медианное</button>
+        </div>
 
-        <h3>Яркость / Контраст</h3>
-        <label>Яркость</label>
-        <input type="range" id="brightness" min="-100" max="100" value="0">
-        <label>Контраст</label>
-        <input type="range" id="contrast" min="0.1" max="3" step="0.1" value="1">
-        <button onclick="applyBrightnessContrast()">Применить</button>
+        <div class="group collapsible">
+            <input type="number" id="cropX" placeholder="X">
+            <input type="number" id="cropY" placeholder="Y">
+            <input type="number" id="cropW" placeholder="Ширина (px)">
+            <input type="number" id="cropH" placeholder="Высота (px)">
+            <button onclick="cropImage()">Обрезать</button>
+        </div>
 
-        <h3>Цветовой баланс</h3>
-        <label>Красный</label>
-        <input type="range" id="red" min="-100" max="100" value="0">
-        <label>Зелёный</label>
-        <input type="range" id="green" min="-100" max="100" value="0">
-        <label>Синий</label>
-        <input type="range" id="blue" min="-100" max="100" value="0">
-        <button onclick="applyColorBalance()">Применить</button>
-
-        <h3>Шум</h3>
-        <button onclick="addGaussianNoise()">Гауссов</button>
-        <button onclick="addSPNoise()">Соль и перец</button>
-
-        <h3>Размытие</h3>
-        <button onclick="applyBlur('average')">Среднее</button>
-        <button onclick="applyBlur('gaussian')">Гауссово</button>
-        <button onclick="applyBlur('median')">Медианное</button>
-
-        <h3>Сохранение</h3>
-        <select id="format">
-            <option value="png">PNG</option>
-            <option value="jpg">JPEG</option>
-            <option value="tiff">TIFF</option>
-        </select>
-        <input type="range" id="quality" min="10" max="100" value="95">
-        <label>Качество (JPEG)</label>
-        <button onclick="saveImage()">Сохранить</button>
-        <p id="saveMessage"></p>
+        <button id="toggle-ui" onclick="toggleUI()">☰</button>
     </div>
 
-    <!-- Панель превью -->
-    <div class="preview-panel">
-        <img id="preview" src="/uploads/placeholder.png" alt="Preview">
+    <!-- ========================= WORKSPACE ========================= -->
+    <div id="workspace-container">
+        <canvas id="canvas"></canvas>
     </div>
-</div>
 
-<script src="/static/js/main.js"></script>
+    <!-- ========================= SIZE PANEL ========================= -->
+    <div id="zoom-panel">
+        <span id="canvas-size">0×0 px</span>
+    </div>
+
+    <!-- ========================= SCRIPTS ========================= -->
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/filters.js"></script>
+    <script src="/static/js/transform.js"></script>
+    <script src="/static/js/hotkeys.js"></script>
 </body>
 </html>

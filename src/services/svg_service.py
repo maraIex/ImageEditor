@@ -1,160 +1,144 @@
-# src/services/svg_service.py
-from typing import Dict, List, Tuple
+# services/svg_service.py
+import svgwrite
 import xml.etree.ElementTree as ET
-import re
-from ..utils.svg_utils import create_svg_template, extract_svg_layers, validate_svg, get_svg_size
+from io import BytesIO
+import base64
+import tempfile
+import os
 
 
 class SVGService:
     @staticmethod
-    def create_new_canvas(width: int = 800, height: int = 600, units: str = 'px') -> Dict:
-        """
-        Создание нового холста SVG.
-        """
-        svg_content = create_svg_template(width, height, units)
-        layers = extract_svg_layers(svg_content)
+    def create_canvas(width, height, unit="px"):
+        """Создание нового SVG холста"""
+        if unit == "mm":
+            # Конвертация мм в пиксели (1mm = 3.7795275591px)
+            width = float(width) * 3.7795275591
+            height = float(height) * 3.7795275591
 
-        return {
-            'svg': svg_content,
-            'canvas': {
-                'width': width,
-                'height': height,
-                'units': units
-            },
-            'layers': layers
-        }
+        dwg = svgwrite.Drawing(size=(f"{width}px", f"{height}px"))
+        dwg.viewbox(width=width, height=height)
+        return dwg
 
     @staticmethod
-    def import_svg(svg_content: str) -> Tuple[str, List[str]]:
-        """
-        Импорт SVG с валидацией и очисткой.
-        Возвращает очищенный SVG и список предупреждений.
-        """
-        cleaned_svg, warnings = validate_svg(svg_content)
-        return cleaned_svg, warnings
+    def add_rectangle(dwg, x, y, width, height, **style):
+        """Добавление прямоугольника"""
+        rect = dwg.rect(insert=(x, y), size=(width, height), **style)
+        dwg.add(rect)
+        return rect
 
     @staticmethod
-    def analyze_svg_structure(svg_content: str) -> Dict:
-        """
-        Анализ структуры SVG.
-        """
+    def add_circle(dwg, center_x, center_y, radius, **style):
+        """Добавление круга"""
+        circle = dwg.circle(center=(center_x, center_y), r=radius, **style)
+        dwg.add(circle)
+        return circle
+
+    @staticmethod
+    def add_ellipse(dwg, center_x, center_y, rx, ry, **style):
+        """Добавление эллипса"""
+        ellipse = dwg.ellipse(center=(center_x, center_y), r=(rx, ry), **style)
+        dwg.add(ellipse)
+        return ellipse
+
+    @staticmethod
+    def add_line(dwg, x1, y1, x2, y2, **style):
+        """Добавление линии"""
+        line = dwg.line(start=(x1, y1), end=(x2, y2), **style)
+        dwg.add(line)
+        return line
+
+    @staticmethod
+    def add_polyline(dwg, points, **style):
+        """Добавление ломаной линии"""
+        polyline = dwg.polyline(points=points, **style)
+        dwg.add(polyline)
+        return polyline
+
+    @staticmethod
+    def add_polygon(dwg, points, **style):
+        """Добавление многоугольника"""
+        polygon = dwg.polygon(points=points, **style)
+        dwg.add(polygon)
+        return polygon
+
+    @staticmethod
+    def add_text(dwg, text, x, y, **style):
+        """Добавление текста"""
+        text_elem = dwg.text(text, insert=(x, y), **style)
+        dwg.add(text_elem)
+        return text_elem
+
+    @staticmethod
+    def create_linear_gradient(dwg, id, start, end, stops):
+        """Создание линейного градиента"""
+        grad = dwg.defs.add(dwg.linearGradient(id=id, x1=start[0], y1=start[1],
+                                               x2=end[0], y2=end[1]))
+        for offset, color in stops:
+            grad.add_stop_color(offset=offset, color=color)
+        return grad
+
+    @staticmethod
+    def create_radial_gradient(dwg, id, center, radius, stops):
+        """Создание радиального градиента"""
+        grad = dwg.defs.add(dwg.radialGradient(id=id, center=center, r=radius))
+        for offset, color in stops:
+            grad.add_stop_color(offset=offset, color=color)
+        return grad
+
+    @staticmethod
+    def add_filter_blur(dwg, id, std_dev=2):
+        """Добавление фильтра размытия"""
+        filt = dwg.defs.add(dwg.filter(id=id))
+        filt.feGaussianBlur(stdDeviation=std_dev)
+        return filt
+
+    @staticmethod
+    def add_filter_shadow(dwg, id, dx=2, dy=2, blur=3, color='black'):
+        """Добавление фильтра тени"""
+        filt = dwg.defs.add(dwg.filter(id=id))
+        filt.feOffset(dx=dx, dy=dy, result='offset')
+        filt.feGaussianBlur(stdDeviation=blur, result='blur')
+        filt.feFlood(flood_color=color, result='flood')
+        filt.feComposite(in_='flood', in2='blur', operator='in', result='comp')
+        filt.feMerge([
+            filt.feMergeNode(in_='comp'),
+            filt.feMergeNode(in_='SourceGraphic')
+        ])
+        return filt
+
+    @staticmethod
+    def add_animation(dwg, element_id, attribute, values, dur="2s", repeatCount="indefinite"):
+        """Добавление анимации"""
+        anim = dwg.animate(
+            attributeName=attribute,
+            values=values,
+            dur=dur,
+            repeatCount=repeatCount
+        )
+        element = dwg.getElementById(element_id)
+        if element:
+            element.add(anim)
+        return anim
+
+    @staticmethod
+    def import_svg(filepath):
+        """Импорт SVG файла"""
         try:
-            # Регистрируем пространства имен
-            ET.register_namespace('svg', 'http://www.w3.org/2000/svg')
-            ET.register_namespace('xlink', 'http://www.w3.org/1999/xlink')
-            ET.register_namespace('inkscape', 'http://www.inkscape.org/namespaces/inkscape')
-            ET.register_namespace('sodipodi', 'http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd')
-
-            root = ET.fromstring(svg_content.encode('utf-8'))
-
-            # Функция для подсчета элементов с учетом пространств имен
-            def count_elements(tag):
-                return len(root.findall(f'.//{{http://www.w3.org/2000/svg}}{tag}'))
-
-            # Базовые элементы
-            elements_count = len(list(root.iter()))
-            groups_count = count_elements('g')
-            paths_count = count_elements('path')
-            images_count = count_elements('image')
-            text_count = count_elements('text')
-            rect_count = count_elements('rect')
-            circle_count = count_elements('circle')
-            ellipse_count = count_elements('ellipse')
-            line_count = count_elements('line')
-            polyline_count = count_elements('polyline')
-            polygon_count = count_elements('polygon')
-
-            # Градиенты
-            linear_gradients = count_elements('linearGradient')
-            radial_gradients = count_elements('radialGradient')
-
-            # Фильтры
-            filters_count = count_elements('filter')
-
-            # Эффекты
-            has_blur = len(root.findall('.//{http://www.w3.org/2000/svg}feGaussianBlur')) > 0
-            has_shadow = len(root.findall('.//{http://www.w3.org/2000/svg}feDropShadow')) > 0
-
-            # Получаем информацию о размерах
-            size_info = get_svg_size(svg_content)
-
-            return {
-                'elements': elements_count,
-                'groups': groups_count,
-                'paths': paths_count,
-                'images': images_count,
-                'text': text_count,
-                'rectangles': rect_count,
-                'circles': circle_count,
-                'ellipses': ellipse_count,
-                'lines': line_count,
-                'polylines': polyline_count,
-                'polygons': polygon_count,
-                'linear_gradients': linear_gradients,
-                'radial_gradients': radial_gradients,
-                'filters': filters_count,
-                'has_blur': has_blur,
-                'has_shadow': has_shadow,
-                'size': size_info,
-                'layers': groups_count  # Предполагаем, что группы = слои
-            }
+            tree = ET.parse(filepath)
+            root = tree.getroot()
+            return ET.tostring(root, encoding='unicode')
         except Exception as e:
-            return {
-                'error': str(e),
-                'elements': 0,
-                'size': {
-                    'width': 800,
-                    'height': 600,
-                    'units': 'px'
-                }
-            }
+            raise Exception(f"Ошибка импорта SVG: {str(e)}")
 
     @staticmethod
-    def normalize_svg(svg_content: str) -> str:
-        """
-        Нормализация SVG (удаление лишних пробелов, переносов).
-        """
-        # Удаляем лишние пробелы и переносы, но сохраняем структуру
-        lines = svg_content.split('\n')
-        cleaned_lines = []
-
-        for line in lines:
-            line = line.strip()
-            if line:
-                cleaned_lines.append(line)
-
-        return '\n'.join(cleaned_lines)
+    def export_png(svg_content, width, height):
+        """Экспорт в PNG (заглушка - требует Cairo)"""
+        # В реальности нужен Cairo или другой конвертер
+        return None
 
     @staticmethod
-    def extract_embedded_images(svg_content: str) -> List[Dict]:
-        """
-        Извлечение информации о встроенных изображениях.
-        """
-        images = []
-        try:
-            # Ищем теги image с data URI
-            image_pattern = r'<image[^>]+href="data:image/([^;]+);base64,([^"]+)"[^>]*>'
-            matches = re.findall(image_pattern, svg_content, re.IGNORECASE)
-
-            for format, data in matches:
-                images.append({
-                    'format': format.lower(),
-                    'size': len(data) * 3 / 4,  # Примерный размер в байтах
-                    'data_url': f"data:image/{format};base64,{data[:50]}..."
-                })
-
-            # Ищем внешние изображения
-            external_pattern = r'<image[^>]+(?:xlink:)?href="([^"]+)"[^>]*>'
-            external_matches = re.findall(external_pattern, svg_content, re.IGNORECASE)
-
-            for url in external_matches:
-                if not url.startswith('data:'):
-                    images.append({
-                        'type': 'external',
-                        'url': url,
-                        'warning': 'Внешнее изображение'
-                    })
-
-            return images
-        except:
-            return []
+    def trace_image(image_path, threshold=128):
+        """Трассировка растрового изображения (заглушка)"""
+        # В реальности нужна библиотека типа Potrace
+        return None

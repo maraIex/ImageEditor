@@ -1,8 +1,11 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, jsonify, send_file
 import os
+import json
+from datetime import datetime
 
-from src.routes import canvas_routes, import_export_routes, project_routes, gradient_filter_routes, image_routes, \
-    animation_routes, vector_routes
+
+from src.routes import canvas_routes, image_routes, \
+    transform_routes, filter_routes, vector_head, vector_api
 
 from src.three_d import scene_routes as three_d_routes
 
@@ -17,9 +20,8 @@ app.config['PROJECTS_FOLDER'] = 'projects'
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50 MB
 
 # Создаем папки
-for folder in [app.config['UPLOAD_FOLDER'], app.config['PROJECTS_FOLDER']]:
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+for folder in ['uploads', 'projects', 'exports']:
+    os.makedirs(folder, exist_ok=True)
 
 @app.route("/")
 def root():
@@ -46,13 +48,12 @@ def three_d_editor():
 
 
 app.register_blueprint(canvas_routes.bp)
-app.register_blueprint(import_export_routes.bp)
-app.register_blueprint(project_routes.bp)
-app.register_blueprint(gradient_filter_routes.bp)
 app.register_blueprint(image_routes.bp)
-app.register_blueprint(animation_routes.bp)
-app.register_blueprint(vector_routes.bp)
+app.register_blueprint(transform_routes.bp)
+app.register_blueprint(filter_routes.bp)
 app.register_blueprint(three_d_routes.bp)
+app.register_blueprint(vector_head.head_bp)
+app.register_blueprint(vector_api.api_bp)
 
 if __name__ == "__main__":
     app.run(debug=True)
