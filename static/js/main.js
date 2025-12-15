@@ -13,8 +13,20 @@ let workspaceSize = 100;      // минимальный размер рабоч�
 // ===================== ЗАГРУЗКА И ОТОБРАЖЕНИЕ =====================
 function loadToCanvas(base64) {
     image.onload = () => {
-        canvas.width = Math.max(image.width, workspaceSize);
-        canvas.height = Math.max(image.height, workspaceSize);
+        const workspace = document.getElementById("workspace-container");
+
+        // задаём размеры canvas
+        canvas.width = Math.max(image.width, 100);
+        canvas.height = Math.max(image.height, 100);
+
+        if (image.height > 1000) {
+            workspace.style.paddingTop = (image.height / 2) + "px";
+            workspace.style.paddingBottom = (image.height / 10) + "px";
+        } else {
+            workspace.style.paddingTop = "0px";
+            workspace.style.paddingBottom = "0px";
+        }
+
         drawCanvas();
         updateCanvasInfo();
     };
