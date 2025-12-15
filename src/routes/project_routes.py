@@ -22,9 +22,28 @@ def save_project():
         project_name = project_data.get('name', 'Безымянный проект')
         project_id = project_data.get('id', str(uuid.uuid4()))
 
-        # Извлекаем слои из SVG
-        layers_data = extract_svg_layers(svg_content)
-        layers = [Layer(**layer) for layer in layers_data]
+        layers_data = extract_svg_layers(svg_content) or []
+        layers = []
+        for ld in layers_data:
+            # ожидаемые ключи: id, name, elements, visible, locked
+            lid = ld.get('id') or str(uuid.uuid4())
+            lname = ld.get('name') or ld.get('data-name') or f'Layer_{lid}'
+            lelements = ld.get('elements') or ld.get('children') or []
+            lvisible = ld.get('visible', True)
+            llocked = ld.get('locked', False)
+
+            try:
+                layer = Layer(id=lid, name=lname, elements=lelements, visible=lvisible, locked=llocked)
+            except TypeError:
+                # если конструктор Layer другой, попытаемся создать через kwargs безопасно
+                try:
+                    layer = Layer(**{k: v for k, v in
+                                     {'id': lid, 'name': lname, 'elements': lelements, 'visible': lvisible,
+                                      'locked': llocked}.items() if k in Layer.__init__.__code__.co_varnames})
+                except Exception:
+                    # fallback: минимальный объект
+                    layer = Layer(id=lid, name=lname)
+            layers.append(layer)
 
         # Настройки холста
         canvas_data = project_data.get('canvas', {})

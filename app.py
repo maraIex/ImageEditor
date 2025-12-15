@@ -20,11 +20,18 @@ UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config['SECRET_KEY'] = 'vector-editor-secret-key'
+app.config['PROJECTS_FOLDER'] = 'projects'
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50 MB
 
+# Создаем папки
+for folder in [app.config['UPLOAD_FOLDER'], app.config['PROJECTS_FOLDER']]:
+    if not os.path.exists(folder):
+        os.makedirs(folder)
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template('vector_editor.html')
 
 
 @app.route("/upload", methods=["POST"])
