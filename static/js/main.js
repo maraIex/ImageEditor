@@ -96,7 +96,6 @@ canvas.addEventListener("mousemove", e => {
         else if ((onRight && onTop) || (onLeft && onBottom)) cursor = "nesw-resize";
         else if (onLeft || onRight) cursor = "ew-resize";
         else if (onTop || onBottom) cursor = "ns-resize";
-        else cursor = "move";
     }
 
     canvas.style.cursor = cursor;
@@ -148,7 +147,6 @@ document.addEventListener("mouseup", () => {
             body: JSON.stringify({ width: image.width, height: image.height })
         }).then(() => reloadImage());
     }
-    if (isDragging) isDragging = false;
 });
 
 // ===================== ЗАГРУЗКА ФАЙЛА =====================
