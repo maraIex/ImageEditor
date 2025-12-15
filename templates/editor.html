@@ -1,0 +1,171 @@
+<!-- templates/editor.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактор SVG</title>
+    <link rel="stylesheet" href="/static/css/editor.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="editor-container">
+        <!-- Панель инструментов -->
+        <div class="toolbar">
+            <div class="tool-group">
+                <button class="tool-btn active" data-tool="select" title="Выбор (V)">
+                    <i class="fas fa-mouse-pointer"></i>
+                </button>
+                <button class="tool-btn" data-tool="rectangle" title="Прямоугольник (R)">
+                    <i class="fas fa-square"></i>
+                </button>
+                <button class="tool-btn" data-tool="ellipse" title="Эллипс (E)">
+                    <i class="fas fa-circle"></i>
+                </button>
+                <button class="tool-btn" data-tool="line" title="Линия (L)">
+                    <i class="fas fa-slash"></i>
+                </button>
+                <button class="tool-btn" data-tool="polygon" title="Многоугольник (P)">
+                    <i class="fas fa-draw-polygon"></i>
+                </button>
+                <button class="tool-btn" data-tool="text" title="Текст (T)">
+                    <i class="fas fa-font"></i>
+                </button>
+            </div>
+
+            <div class="tool-group">
+                <button class="tool-btn" data-action="undo" title="Отменить (Ctrl+Z)">
+                    <i class="fas fa-undo"></i>
+                </button>
+                <button class="tool-btn" data-action="redo" title="Повторить (Ctrl+Y)">
+                    <i class="fas fa-redo"></i>
+                </button>
+                <button class="tool-btn" data-action="save" title="Сохранить (Ctrl+S)">
+                    <i class="fas fa-save"></i>
+                </button>
+                <button class="tool-btn" data-action="export" title="Экспорт">
+                    <i class="fas fa-download"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Основная область -->
+        <div class="main-area">
+            <!-- Левая панель инструментов -->
+            <div class="left-panel">
+                <div class="panel-section">
+                    <h3>Примитивы</h3>
+                    <div class="primitives">
+                        <button data-primitive="star">Звезда</button>
+                        <button data-primitive="polyline">Ломаная</button>
+                        <button data-primitive="path">Кривая</button>
+                    </div>
+                </div>
+                <div class="panel-section">
+                    <h3>Анимации</h3>
+                    <div class="animations">
+                        <button data-animation="opacity">
+                            <i class="fas fa-adjust"></i> Прозрачность
+                        </button>
+                        <button data-animation="move">
+                            <i class="fas fa-arrows-alt"></i> Перемещение
+                        </button>
+                        <button data-animation="rotate">
+                            <i class="fas fa-sync-alt"></i> Вращение
+                        </button>
+                        <button data-animation="scale">
+                            <i class="fas fa-expand-alt"></i> Масштаб
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3>Фильтры</h3>
+                    <div class="filters">
+                        <button data-filter="blur">Размытие</button>
+                        <button data-filter="shadow">Тень</button>
+                        <button data-filter="glow">Свечение</button>
+                        <button data-filter="invert">Инверсия</button>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3>Градиенты</h3>
+                    <div class="gradients">
+                        <button data-gradient="linear">Линейный</button>
+                        <button data-gradient="radial">Радиальный</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Центральная область - холст -->
+            <div class="canvas-container">
+                <div class="canvas-controls">
+                    <button id="zoom-in"><i class="fas fa-search-plus"></i></button>
+                    <button id="zoom-out"><i class="fas fa-search-minus"></i></button>
+                    <button id="zoom-reset">100%</button>
+                </div>
+                <div id="svg-canvas"></div>
+            </div>
+
+            <!-- Правая панель свойств -->
+            <div class="right-panel">
+                <div class="panel-section">
+                    <h3>Свойства</h3>
+                    <div id="properties">
+                        <div class="property">
+                            <label>Заливка:</label>
+                            <input type="color" id="fill-color" value="#4CAF50">
+                        </div>
+                        <div class="property">
+                            <label>Обводка:</label>
+                            <input type="color" id="stroke-color" value="#333333">
+                        </div>
+                        <div class="property">
+                            <label>Толщина:</label>
+                            <input type="number" id="stroke-width" value="1" min="0" max="50">
+                        </div>
+                        <div class="property">
+                            <label>Непрозрачность:</label>
+                            <input type="range" id="opacity" min="0" max="1" step="0.1" value="1">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3>Слои</h3>
+                    <div id="layers-list">
+                        <!-- Слои будут добавляться здесь -->
+                    </div>
+                    <button id="add-layer">+ Добавить слой</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Нижняя панель -->
+        <div class="bottom-panel">
+            <div class="status-bar">
+                <span id="cursor-position">X: 0, Y: 0</span>
+                <span id="zoom-level">100%</span>
+                <span id="selection-info">Не выбрано</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальные окна -->
+    <div id="export-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Экспорт проекта</h2>
+            <div class="export-options">
+                <button data-format="svg">SVG</button>
+                <button data-format="png">PNG</button>
+                <button data-format="jpg">JPEG</button>
+                <button data-format="pdf">PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/vec_editor.js"></script>
+</body>
+</html>
