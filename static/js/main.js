@@ -57,19 +57,6 @@ canvas.addEventListener("mousemove", e => {
     const offsetY = (canvas.height - image.height) / 2;
     const margin = 10;
 
-    // ПЕРЕМЕЩЕНИЕ
-    if (isDragging) {
-        const dx = mx - dragOffsetX;
-        const dy = my - dragOffsetY;
-        dragOffsetX = mx;
-        dragOffsetY = my;
-
-        // Сдвигаем картинку
-        drawCanvas();
-        ctx.drawImage(image, offsetX + dx, offsetY + dy, image.width, image.height);
-        return;
-    }
-
     // РАСТЯЖЕНИЕ
     if (isResizing) {
         const dx = mx - dragOffsetX;
@@ -109,7 +96,6 @@ canvas.addEventListener("mousemove", e => {
         else if ((onRight && onTop) || (onLeft && onBottom)) cursor = "nesw-resize";
         else if (onLeft || onRight) cursor = "ew-resize";
         else if (onTop || onBottom) cursor = "ns-resize";
-        else cursor = "move";
     }
 
     canvas.style.cursor = cursor;
@@ -146,7 +132,6 @@ canvas.addEventListener("mousedown", e => {
         dragOffsetY = my;
     } else if (mx >= offsetX && mx <= offsetX + image.width &&
                my >= offsetY && my <= offsetY + image.height) {
-        isDragging = true;
         dragOffsetX = mx;
         dragOffsetY = my;
     }
@@ -162,7 +147,6 @@ document.addEventListener("mouseup", () => {
             body: JSON.stringify({ width: image.width, height: image.height })
         }).then(() => reloadImage());
     }
-    if (isDragging) isDragging = false;
 });
 
 // ===================== ЗАГРУЗКА ФАЙЛА =====================

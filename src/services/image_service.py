@@ -25,11 +25,6 @@ class ImageService:
         copy_file(self.project.original_path, self.project.current_path)
         self.history.clear()
 
-    def clear(self):
-        if os.path.exists(self.project.current_path):
-            os.remove(self.project.current_path)
-        self.history.clear()
-
     def get_current_base64(self):
         if not os.path.exists(self.project.current_path):
             return None
