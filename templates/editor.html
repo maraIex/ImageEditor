@@ -32,7 +32,23 @@
                     <i class="fas fa-font"></i>
                 </button>
             </div>
-
+                <div class="tool-group">
+                    <button class="tool-btn" data-action="move" title="Перемещение (M)">
+                        <i class="fas fa-arrows-alt"></i>
+                    </button>
+                    <button class="tool-btn" data-action="rotate" title="Вращение (Shift+R)">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button class="tool-btn" data-action="scale" title="Масштаб (S)">
+                        <i class="fas fa-expand-alt"></i>
+                    </button>
+                    <button class="tool-btn" data-action="group" title="Группировать (Ctrl+G)">
+                        <i class="fas fa-object-group"></i>
+                    </button>
+                    <button class="tool-btn" data-action="ungroup" title="Разгруппировать (Ctrl+Shift+G)">
+                        <i class="fas fa-object-ungroup"></i>
+                    </button>
+                </div>
             <div class="tool-group">
                 <button class="tool-btn" data-action="undo" title="Отменить (Ctrl+Z)">
                     <i class="fas fa-undo"></i>
@@ -88,7 +104,39 @@
                         <button data-filter="invert">Инверсия</button>
                     </div>
                 </div>
-
+                <div class="panel-section">
+                    <h3>Трансформация</h3>
+                    <div id="transform-properties">
+                        <div class="property">
+                            <label>Позиция X:</label>
+                            <input type="number" id="transform-x" step="1">
+                        </div>
+                        <div class="property">
+                            <label>Позиция Y:</label>
+                            <input type="number" id="transform-y" step="1">
+                        </div>
+                        <div class="property">
+                            <label>Ширина:</label>
+                            <input type="number" id="transform-width" step="1" min="1">
+                        </div>
+                        <div class="property">
+                            <label>Высота:</label>
+                            <input type="number" id="transform-height" step="1" min="1">
+                        </div>
+                        <div class="property">
+                            <label>Вращение:</label>
+                            <input type="number" id="transform-rotation" step="1" min="0" max="360">
+                        </div>
+                        <div class="property">
+                            <label>Масштаб X:</label>
+                            <input type="number" id="transform-scale-x" step="0.1" min="0.1" max="10" value="1">
+                        </div>
+                        <div class="property">
+                            <label>Масштаб Y:</label>
+                            <input type="number" id="transform-scale-y" step="0.1" min="0.1" max="10" value="1">
+                        </div>
+                    </div>
+                </div>
                 <div class="panel-section">
                     <h3>Градиенты</h3>
                     <div class="gradients">

@@ -141,3 +141,115 @@ class SVGTransform:
         current = element.get('transform', '')
         transform = f'translate({dx},{dy})'
         element.set('transform', f'{current} {transform}'.strip() if current else transform)
+
+    def apply_translation_to_all(elements, dx, dy):
+        """Применение перемещения ко всем элементам"""
+        for element in elements:
+            SVGTransform.apply_translate(element, dx, dy)
+
+    @staticmethod
+    def apply_rotation(element, angle, cx=None, cy=None):
+        """Применение вращения к элементу"""
+        current_transform = element.get('transform', '')
+
+        if cx is not None and cy is not None:
+            transform = f'rotate({angle},{cx},{cy})'
+        else:
+            transform = f'rotate({angle})'
+
+        if current_transform:
+            return f'{current_transform} {transform}'
+        return transform
+
+    @staticmethod
+    def apply_scale(element, sx, sy=None):
+        """Применение масштабирования к элементу"""
+        if sy is None:
+            sy = sx
+
+        current_transform = element.get('transform', '')
+        transform = f'scale({sx},{sy})'
+
+        if current_transform:
+            return f'{current_transform} {transform}'
+        return transform
+
+    @staticmethod
+    def apply_skew(element, skew_x=0, skew_y=0):
+        """Применение наклона к элементу"""
+        current_transform = element.get('transform', '')
+        transforms = []
+
+        if skew_x:
+            transforms.append(f'skewX({skew_x})')
+        if skew_y:
+            transforms.append(f'skewY({skew_y})')
+
+        if transforms:
+            new_transform = ' '.join(transforms)
+            if current_transform:
+                return f'{current_transform} {new_transform}'
+            return new_transform
+
+        return current_transform
+
+    @staticmethod
+    def get_combined_transform(elements):
+        """Получение общей трансформации для группы элементов"""
+        if not elements:
+            return ''
+
+        # Находим общий bounding box
+        bboxes = [SVGTransform.calculate_bounding_box(elem) for elem in elements]
+
+        min_x = min(bbox['x'] for bbox in bboxes)
+        min_y = min(bbox['y'] for bbox in bboxes)
+        max_x = max(bbox['x'] + bbox['width'] for bbox in bboxes)
+        max_y = max(bbox['y'] + bbox['height'] for bbox in bboxes)
+
+        width = max_x - min_x
+        height = max_y - min_y
+
+        # Создаем трансформацию для центра группы
+        center_x = min_x + width / 2
+        center_y = min_y + height / 2
+
+        return f'translate({center_x},{center_y})'
+
+    @staticmethod
+    def create_transform_matrix(a=1, b=0, c=0, d=1, e=0, f=0):
+        """Создание матричной трансформации"""
+        return f'matrix({a},{b},{c},{d},{e},{f})'
+
+    @staticmethod
+    def decompose_transform(transform_str):
+        """Разложение трансформации на компоненты"""
+        transforms = SVGTransform.parse_transform(transform_str)
+        result = {
+            'translate': {'x': 0, 'y': 0},
+            'rotate': {'angle': 0, 'cx': None, 'cy': None},
+            'scale': {'x': 1, 'y': 1},
+            'skew': {'x': 0, 'y': 0},
+            'matrix': None
+        }
+
+        for t in transforms:
+            if t['type'] == 'translate':
+                result['translate']['x'] = t['params'][0]
+                result['translate']['y'] = t['params'][1] if len(t['params']) > 1 else t['params'][0]
+            elif t['type'] == 'rotate':
+                result['rotate']['angle'] = t['params'][0]
+                if len(t['params']) > 1:
+                    result['rotate']['cx'] = t['params'][1]
+                    result['rotate']['cy'] = t['params'][2]
+            elif t['type'] == 'scale':
+                result['scale']['x'] = t['params'][0]
+                result['scale']['y'] = t['params'][1] if len(t['params']) > 1 else t['params'][0]
+            elif t['type'] == 'skewX':
+                result['skew']['x'] = t['params'][0]
+            elif t['type'] == 'skewY':
+                result['skew']['y'] = t['params'][0]
+            elif t['type'] == 'matrix':
+                result['matrix'] = t['params']
+
+        return result
