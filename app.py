@@ -39,7 +39,7 @@ def raster_editor():
 @app.route("/vector")
 def vector_editor():
     # Векторный редактор
-    return render_template("vector_editor.html")
+    return render_template("editor.html")
 
 @app.route("/3d")
 def three_d_editor():
